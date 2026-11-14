@@ -35,3 +35,13 @@ real-site result existed.
    and a post-fire pair's history would mix pre-fire values into the mean, flagging the burn
    itself. Pairs without enough same-regime history are not scored by B2.
 3. **`mode: real | synthetic` in the config** tells `run` whether to call `synth` or `grid`.
+
+## Results (appended after scoring; nothing above was edited)
+
+Scored on 2026-11-14 from freeze commit `6994eb2`; full numbers in
+`artifacts/mccully/metrics.json` and `calibration.json`.
+
+- **H1: PASS.** vs B1: pass (FAR@R50 M=0.0846, B1=0.2358, diff CI95 upper=-0.11732818384857222); vs B2: pass (FAR@R50 M=0.0846, B2=0.1499, diff CI95 upper=-0.0485763371766363); vs B3: pass (FAR@R50 M=0.0846, B3=0.1285, diff CI95 upper=-0.03175985498706122)
+- **H3: PASS.** M within [α/2, 2α] on 14 of 14 left-out checks (α = 1% and 5%, seven no-event pairs).
+  Largest M rates: 0.0200 at α = 1% (on the upper edge) and 0.0697 at α = 5%.
+- **H2: not tested.**
