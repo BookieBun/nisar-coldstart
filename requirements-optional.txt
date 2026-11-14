@@ -1,0 +1,7 @@
+# Streaming reads without full download
+fsspec
+aiohttp
+h5netcdf
+xarray
+# Rainfall covariate (O5) and optical alerts (O7)
+earthaccess

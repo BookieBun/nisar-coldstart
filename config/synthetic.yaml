@@ -1,0 +1,107 @@
+# Synthetic site: runs the whole pipeline with no network and no credentials.
+site: synthetic
+mode: synthetic                    # real | synthetic; `run` uses synth instead of grid
+seed: 20261114
+paths: {data_root: data, artifacts_root: artifacts}
+
+search:                            # unused in synthetic mode
+  dataset: NISAR
+  bbox_wgs84: [-123.0, 40.5, -122.5, 40.9]
+  start: "2026-06-17"
+  end: "2026-11-14"
+  track: null
+  frame: null
+  direction: null
+  mode: null
+  polarization: null
+
+perimeter:
+  path: data/perimeter/synthetic.geojson
+  incident_name: Synthetic
+  name_field: poly_IncidentName
+
+event:
+  ignition: "2026-08-10"           # between synthetic dates 3 and 4
+  end: "2026-08-18"                # synthetic date 4
+
+grid:
+  freq: A
+  buffer_km: 30
+  target_cell_m: 100
+  min_valid_fraction: 0.6
+  tile_km: 10
+  n_folds: 5
+
+mask:
+  water_hv_db_max: -24.0
+  terrain_pct: [1, 99]
+  min_valid_area_fraction: 0.5
+
+features:
+  n_classes: 6
+  tex_window: 3
+  kmeans_max_cells: 200000
+  use_worldcover: false
+  use_rain: false
+
+model:
+  quantiles: [0.05, 0.5, 0.95]
+  learning_rate: 0.1
+  max_iter: 200
+  max_leaf_nodes: 31
+  min_samples_leaf: 200
+  l2_regularization: 1.0
+  max_train_cells: 50000           # real site uses 300000
+  spread_floor_db: 0.25
+
+baselines:
+  b2_std_floor_db: 0.5
+  b3_spread_floor_db: 0.25
+  b2_history_dates: 2              # fixed history length, same regime (decision C4)
+
+postprocess:
+  min_patch_cells: 4
+
+calibration:
+  alphas: [0.01, 0.02, 0.05, 0.10]
+  max_cal_cells_per_pair: 200000
+  report_alpha: 0.05
+  h3_alphas: [0.01, 0.05]
+  h3_band: [0.5, 2.0]              # realized rate must lie in [0.5, 2.0] x alpha
+
+labels:
+  shrink_cells: 1
+  negative_buffer_km: 2.0
+
+evaluate:
+  recall_target: 0.5
+  far_target: 0.01
+  bootstrap_block_km: 5
+  bootstrap_n: 500
+
+display:
+  max_display_cells: 1000
+
+synthetic:
+  shape: [400, 400]
+  n_dates: 6
+  start_date: "2026-07-01"
+  interval_days: 12
+  n_classes: 3
+  blob_sigma: 12.0
+  hh_base_db: -10.0
+  hv_base_db: -18.0
+  hh_class_offset_db: [-2.0, 0.0, 2.0]
+  hv_class_offset_db: [-3.0, 0.0, 3.0]
+  static_sd_db: 1.0                # stable per-cell deviation from the class level
+  class_noise_sd_db: [0.5, 1.0, 1.5]
+  shared_shift_sd_db: 1.0          # per class, date and polarization
+  brightness_coupling_sd: 0.3      # per-date shift proportional to the cell's static deviation
+  terrain_sd: 0.05
+  event_index: 4                   # first date showing the burn
+  disc_radius_cells: 30
+  hh_drop_db: -1.0
+  hv_drop_db: -2.0
+  missing_block: [2, 50, 50, 10]   # date index, row, col, size: exercises the missing-data mask
+  origin_xy: [500000.0, 4500000.0]
+  crs_epsg: 32610

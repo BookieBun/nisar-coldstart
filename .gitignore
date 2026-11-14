@@ -1,0 +1,10 @@
+data/
+.netrc
+_netrc
+*.h5
+__pycache__/
+.venv/
+.ipynb_checkpoints/
+*.egg-info/
+.pytest_cache/
+.streamlit/secrets.toml

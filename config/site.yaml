@@ -1,0 +1,94 @@
+# Real site: McCully Fire, Baker County, Oregon (WFIGS; discovered 2026-08-22, ~13,600 acres).
+# Chosen with scripts/find_scenes.py on 2026-11-14: track 077 ascending, frame 024 has
+# 5 pre-ignition and 6 post-ignition GCOV dates in one mode (4005, dual-pol HH/HV).
+site: mccully
+mode: real
+seed: 20261114
+paths: {data_root: data, artifacts_root: artifacts}
+
+search:
+  dataset: NISAR
+  bbox_wgs84: [-118.353, 44.803, -118.187, 44.914]   # fire bbox; the window adds grid.buffer_km
+  start: "2026-06-17"
+  end: "2026-11-14"
+  track: "077"
+  frame: "024"
+  direction: A
+  mode: "4005"
+  polarization: DHDH
+
+perimeter:
+  path: data/perimeter/mccully.geojson
+  incident_name: McCully
+  name_field: poly_IncidentName
+
+event:
+  ignition: "2026-08-22"
+  # First date treated as post-event. WFIGS records no containment date for McCully, but its
+  # final perimeter (13,604 acres) was last updated 2026-09-15 (poly_DateCurrent) and never
+  # changed after. 2026-09-23 is the first track-077 acquisition after that update.
+  end: "2026-09-23"
+
+io:
+  stream: true                     # read windows over HTTPS; no 7.5 GB downloads
+  max_download_gb: 40
+  min_free_gb: 10
+  workers: 16                      # concurrent HTTPS range requests per layer (HDF5 chunk prefetch)
+
+grid:
+  freq: A
+  buffer_km: 30
+  target_cell_m: 100
+  min_valid_fraction: 0.6
+  tile_km: 10
+  n_folds: 5
+
+mask:
+  water_hv_db_max: -24.0           # [VERIFY on data]
+  terrain_pct: [1, 99]
+  min_valid_area_fraction: 0.5
+
+features:
+  n_classes: 6
+  tex_window: 3
+  kmeans_max_cells: 200000
+  use_worldcover: false
+  use_rain: false
+
+model:
+  quantiles: [0.05, 0.5, 0.95]
+  learning_rate: 0.1
+  max_iter: 200
+  max_leaf_nodes: 31
+  min_samples_leaf: 200
+  l2_regularization: 1.0
+  max_train_cells: 300000
+  spread_floor_db: 0.25
+
+baselines:
+  b2_std_floor_db: 0.5
+  b3_spread_floor_db: 0.25
+  b2_history_dates: 2
+
+postprocess:
+  min_patch_cells: 4
+
+calibration:
+  alphas: [0.01, 0.02, 0.05, 0.10]
+  max_cal_cells_per_pair: 200000
+  report_alpha: 0.05
+  h3_alphas: [0.01, 0.05]
+  h3_band: [0.5, 2.0]
+
+labels:
+  shrink_cells: 1
+  negative_buffer_km: 2.0
+
+evaluate:
+  recall_target: 0.5
+  far_target: 0.01
+  bootstrap_block_km: 5
+  bootstrap_n: 500
+
+display:
+  max_display_cells: 1000
