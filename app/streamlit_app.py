@@ -8,6 +8,7 @@ term for each plain-language label is kept in a tooltip or caption beside it.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -25,7 +26,12 @@ from scipy.ndimage import binary_erosion
 from streamlit_folium import st_folium
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # app/places.py, under any launcher
-from places import flagged_places  # noqa: E402
+import places  # noqa: E402
+
+# A running server re-executes this script after a code update but keeps imported modules; reload so an
+# updated places.py is never paired with a newer caller.
+importlib.reload(places)
+flagged_places = places.flagged_places
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
@@ -74,6 +80,12 @@ def load(site: str) -> dict:
            "failure": pd.read_csv(d / "failure_table.csv") if (d / "failure_table.csv").exists() else None,
            "summary": json.loads((d / "flag_summary.json").read_text()) if (d / "flag_summary.json").exists() else None,
            "compare_png": (d / "figures" / "compare_methods.png") if (d / "figures" / "compare_methods.png").exists() else None}
+    # Other agency-mapped fires in the window (scripts/other_fires.py; exploratory, optional).
+    if (d / "other_fires.json").exists() and (d / "other_fires.npz").exists():
+        out["other"] = {**json.loads((d / "other_fires.json").read_text()),
+                        "ids": np.load(d / "other_fires.npz")["ids"]}
+    else:
+        out["other"] = None
     return out
 
 
@@ -140,6 +152,18 @@ def outline(site: str) -> np.ndarray:
     edge = lab & ~binary_erosion(lab)
     img = np.zeros(lab.shape + (4,), np.uint8)
     img[edge] = (0, 200, 255, 255)
+    return img
+
+
+@st.cache_data(show_spinner=False)
+def other_outline(site: str) -> np.ndarray | None:
+    oth = load(site)["other"]
+    if not oth or not oth["fires"]:
+        return None
+    on = oth["ids"] > 0
+    edge = on & ~binary_erosion(on)
+    img = np.zeros(on.shape + (4,), np.uint8)
+    img[edge] = (255, 210, 0, 255)
     return img
 
 
@@ -230,6 +254,9 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
               ("Change score", rgba(site, f"score_{det}", 0, 6, "magma"), False, False),
               (f"Flagged as changed ({odds(alpha)})", rgba(site, f"flags_{det}", 0, 1, "Reds", bit=bit), True, False),
               ("Fire perimeter (reference)", outline(site), True, False)]
+    other = other_outline(site)
+    if other is not None:
+        layers.append(("Other fires mapped in 2026 (reference)", other, True, False))
     for name, img, show, radar in layers:
         folium.raster_layers.ImageOverlay(image=to_mercator_rows(img, s, n), bounds=b, name=name,
                                           opacity=0.85 if radar else 1.0, show=show).add_to(m)
@@ -243,8 +270,10 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         fire = [[n - (rr.max() + 1) / h * (n - s), w + cc.min() / wd * (e - w)],
                 [n - rr.min() / h * (n - s), w + (cc.max() + 1) / wd * (e - w)]]
         m.fit_bounds(fire, padding_top_left=(20, 20), padding_bottom_right=(20, 420))
-    st.markdown("**Red** = flagged as changed. **Cyan outline** = the mapped edge of the fire. **Grey** = the radar "
-                "image. A red cell is a detected change, not confirmed fire damage; the full guide is below the map.")
+    st.markdown("**Red** = flagged as changed. **Cyan outline** = the mapped edge of the fire. "
+                + ("**Yellow outline** = other fires mapped by agencies in 2026. " if other is not None else "")
+                + "**Grey** = the radar image. A red cell is a detected change, not confirmed fire damage; the full "
+                "guide is below the map.")
     left, right = st.columns([3, 2])
     with left:
         out = st_folium(m, height=620, use_container_width=True, returned_objects=["last_clicked"], key=f"map_{site}")
@@ -266,7 +295,10 @@ def places_table(site: str, det: str, alpha: float) -> pd.DataFrame:
     arr, meta = D["arr"], D["meta"]
     bit = meta["alphas"].index(alpha)
     flags = ((arr[f"flags_{det}"].astype(np.uint8) >> bit) & 1).astype(bool)
-    return flagged_places(flags, arr["labels"], arr[f"score_{det}"].astype(np.float32), meta["bounds"], meta["shape"])
+    oth = D["other"]
+    return flagged_places(flags, arr["labels"], arr[f"score_{det}"].astype(np.float32), meta["bounds"], meta["shape"],
+                          other_ids=oth["ids"] if oth else None,
+                          other_names={f["id"]: f["name"] for f in oth["fires"]} if oth else None)
 
 
 def view_places(site: str, det: str, alpha: float) -> None:
@@ -278,14 +310,36 @@ def view_places(site: str, det: str, alpha: float) -> None:
     st.caption(f"{len(df):,} separate patches are flagged by {DET_SHORT[det]} at the {odds(alpha)} setting. "
                "The largest are listed first. Each is a place to look at with other imagery or on the ground, "
                "not confirmed damage. Areas and positions are approximate (display grid).")
-    show = df.head(15).copy()
-    show.insert(0, "Rank", np.arange(1, len(show) + 1))
-    show["overlaps_perimeter"] = show["overlaps_perimeter"].map({True: "yes", False: "no"})
-    show = show.rename(columns={"area_km2": "Area (km², approx.)", "lat": "Latitude", "lon": "Longitude",
-                                "cells": "Cells", "mean_score": "Mean change score",
-                                "overlaps_perimeter": "Touches the fire perimeter"})
-    st.dataframe(show.round({"Area (km², approx.)": 2, "Latitude": 4, "Longitude": 4, "Mean change score": 2}),
-                 hide_index=True, width="stretch")
+    view = df
+    if load(site)["other"] is not None:
+        known = df["overlaps_perimeter"] | (df["other_fire"] != "")
+        top = min(15, len(df))
+        st.caption(f"{int(known.head(top).sum())} of the {top} largest touch a fire mapped by agencies in 2026: this "
+                   "one or another (yellow outline on the map). Those match a known event; the rest are unexplained "
+                   "change, or false alarms.")
+        choice = st.radio("Show", ["All flagged places", "Only places away from mapped fires"], horizontal=True,
+                          key=f"places_filter_{site}",
+                          help="Mapped fires: this fire's perimeter and the other 2026 perimeters in the window "
+                               "(NIFC). A flagged place away from them is either a change nobody has recorded or "
+                               "a false alarm; those are the ones to check with other imagery.")
+        if choice != "All flagged places":
+            view = df[~known]
+    if view.empty:
+        st.info("No flagged place matches this filter.")
+    else:
+        show = view.head(15).copy()
+        show.insert(0, "Rank", show.index + 1)
+        show["overlaps_perimeter"] = show["overlaps_perimeter"].map({True: "yes", False: "no"})
+        show["other_fire"] = show["other_fire"].replace("", "no")
+        show = show[["Rank", "area_km2", "overlaps_perimeter", "other_fire", "mean_score", "cells", "lat", "lon"]]
+        show = show.rename(columns={"area_km2": "Area (km², approx.)", "lat": "Latitude", "lon": "Longitude",
+                                    "cells": "Cells", "mean_score": "Mean change score",
+                                    "overlaps_perimeter": "Touches this fire",
+                                    "other_fire": "Touches another mapped fire"})
+        if load(site)["other"] is None:
+            show = show.drop(columns=["Touches another mapped fire"])
+        st.dataframe(show.round({"Area (km², approx.)": 2, "Latitude": 4, "Longitude": 4, "Mean change score": 2}),
+                     hide_index=True, width="stretch")
     st.download_button(f"Download all {len(df):,} patches (CSV)", df.round(5).to_csv(index=False),
                        file_name=f"{site}_{det}_1in{round(1 / alpha)}_flagged_places.csv", mime="text/csv")
 
@@ -342,20 +396,139 @@ def _fmt(v, ci):
     return f"{v:.3f}" + (f"  [{lo:.3f}, {hi:.3f}]" if lo is not None and hi is not None else "")
 
 
+def event_dates(met: dict) -> tuple[str, str]:
+    """'20260818_20260923' -> ('2026-08-18', '2026-09-23')."""
+    a, b = str(met["event_pair"]).split("_")[:2]
+    return tuple(f"{x[:4]}-{x[4:6]}-{x[6:8]}" for x in (a, b))
+
+
+def h3_count(cal: dict, det: str) -> tuple[int, int]:
+    """(checks in range, checks) for one method on the left-out pairs that Test 2 scores."""
+    rows = [r for r in cal["lopo"] if r.get("pass") is not None and r["detector"] == det]
+    return sum(bool(r["pass"]) for r in rows), len(rows)
+
+
+def pct1(v: float) -> str:
+    """One decimal, so close results (27.8% against 27.9%) stay distinguishable."""
+    return f"{v:.1%}"
+
+
+def _join(items: list[str]) -> str:
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def test_reasons(D: dict) -> dict:
+    """One plain-language sentence per test result, built from the stored metrics and calibration."""
+    met, cal = D["metrics"], D["calib"]
+    dets, diffs = met["detectors"], met.get("differences", {})
+    out = {}
+    if "M" in dets:
+        less, same, more = [], [], []
+        for b in ("B3", "B2", "B1"):
+            d = diffs.get(f"M_minus_{b}", {}).get("far_at_recall50")
+            if b not in dets or d is None:
+                continue
+            item = f"{DET_SHORT[b]} method ({pct1(dets[b]['far_at_recall50'])})"
+            lo, hi = d["ci95"]
+            (less if hi < 0 else more if lo > 0 else same).append(item)
+        s = f"Ours flagged {pct1(dets['M']['far_at_recall50'])} of the land outside"
+        if less and not same and not more:
+            s += (f", less than the {_join(less)}. Each gap held up in the uncertainty check (its 95% range "
+                  "stays below zero).")
+        else:
+            parts = []
+            if less:
+                parts.append(f"less than the {_join(less)}")
+            if same:
+                parts.append(f"about the same as the {_join(same)}: the 95% range of that gap includes zero")
+            if more:
+                parts.append(f"more than the {_join(more)}")
+            s += ", " + ", but ".join(parts) + "."
+        out["H1"] = s
+    mk, mn = h3_count(cal, "M")
+    alphas = sorted({r["alpha"] for r in cal["lopo"] if r.get("pass") is not None})
+    others = [f"{DET_SHORT[d]} {k} of {n}" for d in ("B3", "B2", "B1") for k, n in [h3_count(cal, d)] if n]
+    if mn:
+        out["H3"] = (f"Ours stayed in range on {mk} of {mn} checks: each check leaves one pair of dates out of the "
+                     f"calibration, at the {_join([odds(a) for a in alphas])} settings."
+                     + (f" The other methods: {', '.join(others)}." if others else ""))
+    return out
+
+
+def view_sites_summary() -> None:
+    """Both (or all) real fires side by side, so the replication outcome is visible from any site."""
+    rows = []
+    for x in real_sites():
+        met, cal = load(x)["metrics"], load(x)["calib"]
+        dets, h = met["detectors"], met["hypotheses"]
+        base = [d for d in ("B3", "B2", "B1") if d in dets]
+        if "M" not in dets or not base:
+            continue
+        best = min(base, key=lambda d: dets[d]["far_at_recall50"])
+        a, b = event_dates(met)
+        mk, mn = h3_count(cal, "M")
+        role = SITE_ROLE.get(x, "").removeprefix("the ")
+        rows.append({"Fire": SITE_NAMES.get(x, x).split(",")[0] + (f" ({role})" if role else ""),
+                     "Dates compared": f"{a} to {b}",
+                     "Test 1: fewest false alarms": "PASS" if h["H1"]["pass"] else "FAIL",
+                     "Test 2: setting held": f"{'PASS' if h['H3']['pass'] else 'FAIL'} ({mk} of {mn})",
+                     "Outside land flagged, ours": pct1(dets["M"]["far_at_recall50"]),
+                     "Best other method": f"{pct1(dets[best]['far_at_recall50'])} ({DET_SHORT[best]})"})
+    if len(rows) < 2:
+        return
+    st.markdown(f"#### {'Both' if len(rows) == 2 else 'All ' + str(NUM_WORDS.get(len(rows), len(rows)))} fires "
+                "at a glance")
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    st.caption("Each fire's tests were written down before it was scored. \"Outside land flagged\" is the share of "
+               "land more than 2 km outside the perimeter that a method flags when it finds half of the inside "
+               "(lower is better). The selected site's details follow.")
+
+
+def view_other_fires(D: dict) -> None:
+    """Exploratory: how often each method flags other mapped fires, which were left out of every score."""
+    oth = D.get("other")
+    if not oth or not oth["fires"] or not oth.get("n_other_cells"):
+        return
+    ra = str(D["meta"]["report_alpha"])
+    st.markdown("#### Exploratory check: other fires mapped in 2026")
+    st.caption("Added after the results; not one of the tests written down in advance. Agencies mapped other "
+               "fires in this window in 2026 (yellow outlines on the map). Their cells were left out of every "
+               "score on this page, so they give an independent check: a method that responds to burns should "
+               "flag them far more often than ordinary land.")
+    rows = []
+    for d in ("M", "B3", "B2", "B1"):
+        r = oth["rates"].get(d, {}).get(ra)
+        if not r or r["other_fires"] is None:
+            continue
+        rows.append({"Method": DET_NAMES[d], "Cells in other mapped fires flagged": pct1(r["other_fires"]),
+                     "Ordinary land flagged": pct1(r["control"]),
+                     "Times the ordinary rate": f"{r['other_fires'] / r['control']:.1f}" if r["control"] else "n/a"})
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    big = sorted((f for f in oth["fires"] if f.get("cells", 0) >= 50), key=lambda f: -f["cells"])
+    if big:
+        st.dataframe(pd.DataFrame([{
+            "Fire": f["name"], "Discovered": f.get("discovered") or "unknown", "Cells of 100 m in the window": f["cells"],
+            "Flagged by our model": pct1(oth["rates"]["M"][ra]["per_fire"][str(f["id"])]),
+            "Flagged by before/after difference": pct1(oth["rates"]["B1"][ra]["per_fire"][str(f["id"])])}
+            for f in big]), hide_index=True, width="stretch")
+    a, b = event_dates(D["metrics"])
+    st.caption(f"At the {odds(float(ra))} setting, as mapped (after small patches are removed). Dates compared: {a} "
+               f"to {b}; a fire that stopped changing before the first date should show little. Perimeters are "
+               "outlines, not burn-severity maps, and when each cell burned is not known. Ordinary land: more than "
+               f"2 km outside this fire's perimeter ({oth['n_control']:,} cells); other fires: {oth['n_other_cells']:,} "
+               "cells. Fires with fewer than 50 cells in the window are counted but not listed.")
+
+
 def view_validation(D: dict) -> None:
     met, cal = D["metrics"], D["calib"]
     h = met["hypotheses"]
+    view_sites_summary()
     st.markdown("Two tests were written down, with all settings, before the fire dates were scored. "
                 "This page shows how they came out, and every number behind them.")
     where = SITE_PREREG.get(D["meta"].get("site", ""))
     if where:
         st.caption(f"For this site the tests are in {where}.")
-    if D.get("compare_png") is not None:
-        st.markdown("#### Same false-alarm setting, two methods")
-        st.image(str(D["compare_png"]), width="stretch")
-        st.caption("Both methods are set to the same calibrated false-alarm level on the same two radar dates. "
-                   "The standard method flags little inside the fire; ours flags much more of it, and also flags "
-                   "some land outside, such as the streaks along valleys. Some of those may be real changes.")
+    reasons = test_reasons(D)
     c1, c2 = st.columns(2)
     for col, key, name, text in (
             (c1, "H1", "Test 1", "With every method set to flag half of the cells inside the fire perimeter, ours flags the least land outside it."),
@@ -363,15 +536,30 @@ def view_validation(D: dict) -> None:
         ok = h[key]["pass"]
         col.markdown(f"### {name} ({key}): {'PASS' if ok else 'FAIL'}")
         col.caption(text)
+        if key in reasons:
+            col.markdown(reasons[key])
         with col.expander("Detail"):
             st.write(h[key]["detail"])
+    if D.get("compare_png") is not None:
+        st.markdown("#### Same false-alarm setting, two methods")
+        st.image(str(D["compare_png"]), width="stretch")
+        ra = str(D["meta"]["report_alpha"])
+        sm = (D["summary"] or {}).get("detectors", {})
+        b1, mm = sm.get("B1", {}).get(ra), sm.get("M", {}).get(ra)
+        st.caption(f"Both methods are set to the same calibrated false-alarm level ({odds(float(ra))}) on the same "
+                   "two radar dates."
+                   + (f" Inside the fire perimeter the standard method flags {pct(b1['inside_flagged'])} of the "
+                      f"cells and ours {pct(mm['inside_flagged'])}; on land more than 2 km outside, "
+                      f"{pct(b1['outside_flagged'])} and {pct(mm['outside_flagged'])}." if b1 and mm else "")
+                   + " Flags outside count as false alarms in the scores, though some may be real changes.")
+    view_other_fires(D)
     st.caption(f"Before and after dates: {met['event_pair']} (the event pair). {met['n_pos']:,} burned and "
                f"{met['n_neg']:,} comparison (control) cells. Calibration mode: {met['calibration_mode']}. "
                f"Code version: commit {met['commit'][:10]}.")
 
-    pct = f"{odds(met['report_alpha'])} setting"
+    at_setting = f"{odds(met['report_alpha'])} setting"
     cols = {"far": "Land outside the perimeter flagged, when half the inside is flagged", "rec": "Inside cells flagged at a 1 in 100 false-alarm setting",
-            "ap": "Ranking quality", "f1": f"Map agreement at the {pct}"}
+            "ap": "Ranking quality", "f1": f"Map agreement at the {at_setting}"}
     rows = []
     for d in ("M", "B3", "B2", "B1"):
         if d not in met["detectors"]:
@@ -435,7 +623,7 @@ def view_validation(D: dict) -> None:
                                 "n_neg": "Cells outside (over 2 km)", "recall": "Share of inside cells flagged (recall)",
                                 "far": "Share of outside cells flagged (false-alarm rate)"})
         st.dataframe(ft, hide_index=True, width="stretch")
-        st.caption(f"At the {pct}. Land-type groups run from the darkest radar return (0, open land) to the "
+        st.caption(f"At the {at_setting}. Land-type groups run from the darkest radar return (0, open land) to the "
                    "brightest (5, dense forest); they are clusters of radar brightness before the fire.")
 
 

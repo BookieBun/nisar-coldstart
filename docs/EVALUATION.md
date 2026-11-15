@@ -231,3 +231,36 @@ inside one calibration pair; both were noted before processing.
 ![Same setting, two methods (Austin)](../artifacts/austin/figures/compare_methods.png)
 ![Leave-one-pair-out calibration (Austin)](../artifacts/austin/figures/h3_realized.png)
 
+## 11. Other mapped fires in both windows (exploratory)
+
+Added after both fires were scored, for the app's places list; not a pre-registered test.
+`scripts/other_fires.py` uses the same perimeter selection as `truth.py`, the same thresholds
+and flag rule as the evaluation (after the 4-cell patch filter, as mapped), and counts every
+valid cell. Section 7 counted scored cells for McCully, so its cell counts differ slightly.
+
+| Window | Detector | Other fires flagged | Control flagged | Ratio |
+| --- | --- | --- | --- | --- |
+| McCully | M | 0.272 | 0.026 | 10.4 |
+| McCully | B3 | 0.254 | 0.026 | 9.6 |
+| McCully | B2 | 0.094 | 0.020 | 4.7 |
+| McCully | B1 | 0.065 | 0.022 | 3.0 |
+| Austin | M | 0.355 | 0.015 | 24.0 |
+| Austin | B3 | 0.299 | 0.028 | 10.8 |
+| Austin | B2 | 0.011 | 0.014 | 0.8 |
+| Austin | B1 | 0.009 | 0.022 | 0.4 |
+
+Austin, fires with at least 50 cells:
+
+| Fire | Discovered | Cells | M | B3 | B1 |
+| --- | --- | --- | --- | --- | --- |
+| Grasshopper | 2026-07-24 | 6,080 | 0.36 | 0.31 | 0.01 |
+| Bench | 2026-07-23 | 609 | 0.34 | 0.26 | 0.04 |
+| The Narrows | 2026-08-08 | 92 | 0.00 | 0.10 | 0.00 |
+
+Both normalizing methods (M and B3) flag the other fires roughly ten to twenty times as often as
+control land; the log-ratio and short-history methods barely separate them, and on Austin flag
+them less often than control land. The model's ratio is higher than B3's on Austin mainly
+because it flags less control land at the same calibrated setting (1.5% against 2.8%). The
+Grasshopper Fire burned during the 07-15 to 07-27 calibration pair as well as the event pair,
+which raises every threshold; it was noted before processing. These fires were not chosen in
+advance, so the check is descriptive.

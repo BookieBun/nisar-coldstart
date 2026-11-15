@@ -29,10 +29,10 @@ python -m coldstart search config/site.yaml
 python -m coldstart run config/site.yaml
 ```
 
-The replication runs the same way with `config/site_austin.yaml`. `python scripts/flag_summary.py` and `python scripts/compare_figure.py` (same argument) rebuild the app's
-per-setting summary and side-by-side figure from stored outputs.
+The replication runs the same way with `config/site_austin.yaml`. `python scripts/flag_summary.py`, `python scripts/compare_figure.py` and `python scripts/other_fires.py` (same argument) rebuild the app's
+per-setting summary, side-by-side figure and other-fire cross-check from stored outputs.
 
-`pip install -e ".[test]"` then `pytest` runs the test suite (38 tests, about a minute and a half, offline).
+`pip install -e ".[test]"` then `pytest` runs the test suite (44 tests, about a minute and a half, offline).
 `python scripts/exploratory.py config/site.yaml` reruns the ablations and robustness checks.
 
 ## Results: McCully Fire
@@ -131,6 +131,33 @@ inside one calibration pair; both were noted before processing.
 ![Same setting, two methods (Austin)](artifacts/austin/figures/compare_methods.png)
 ![Leave-one-pair-out calibration (Austin)](artifacts/austin/figures/h3_realized.png)
 
+## Other mapped fires: an exploratory cross-check
+
+*Added after both fires were scored; not one of the pre-registered tests.* Every 2026 fire
+perimeter that agencies mapped in each window, other than the studied fire, is already left out
+of all scores (`truth.py`). `scripts/other_fires.py` records which fire each of those cells
+belongs to, so the app can mark flagged places that touch one, and measures how often each
+method flags them at the 1-in-20 setting, as mapped:
+
+| Window | Method | Other mapped fires flagged | Ordinary land flagged | Ratio |
+| --- | --- | --- | --- | --- |
+| McCully (3,195 cells in other fires) | **M** | 27.2% | 2.6% | 10.4 |
+| | B3, land-type | 25.4% | 2.6% | 9.6 |
+| | B1, log-ratio | 6.5% | 2.2% | 3.0 |
+| Austin (6,787 cells in other fires) | **M** | 35.5% | 1.5% | 24.0 |
+| | B3, land-type | 29.9% | 2.8% | 10.8 |
+| | B1, log-ratio | 0.9% | 2.2% | 0.4 |
+
+On Austin the three largest places the model flags lie inside the Grasshopper Fire, which it was
+never told about, and five of the six largest touch another mapped fire; the log-ratio flags
+under 1% of the Grasshopper Fire. A prescribed burn from
+April near McCully, before every date compared, is flagged by no method (0 of 215 cells).
+Limits: the comparison was chosen after the results; perimeters are outlines, and when each
+cell burned is not known; the Grasshopper Fire also burned during one Austin calibration pair,
+which raises every method's threshold. The land-type baseline catches these fires nearly as
+often as the model, so this check separates both of them from the standard methods, not from
+each other.
+
 ## How it works
 
 1. **Window.** The fire's bounding box plus 30 km, streamed from eleven NISAR GCOV scenes of one
@@ -186,8 +213,10 @@ event such as a fire:
 1. Choose the area and the share of false alarms you can tolerate.
 2. The map shows where NISAR's radar changed more than similar land in the same scene did.
 3. Click a place to see its radar signal on every date beside the range the model expected.
-4. Use the flags to decide where to look first, then check them against other imagery or on the
-   ground. A flag is a detected change, not confirmed damage.
+4. Use the "Places to check first" list to decide where to look first. It marks the places that
+   touch a fire agencies have already mapped, and can hide them, so unexplained change comes up
+   first. Check each place against other imagery or on the ground. A flag is a detected change,
+   not confirmed damage.
 
 Before anyone relied on it, it would need testing on more events and sites, comparison with
 burn-severity maps from optical imagery, and field checks of flagged and unflagged places.

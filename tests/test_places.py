@@ -33,3 +33,22 @@ def test_no_flags_gives_empty_table():
     z = np.zeros((10, 10))
     df = flagged_places(z.astype(bool), z.astype(int), z, BOUNDS, [10, 10])
     assert df.empty and list(df.columns) == COLUMNS
+
+
+def test_other_fire_names_per_patch():
+    flags = np.zeros((50, 50), bool)
+    flags[5:10, 5:10] = True            # 25 cells, touches fire 1 and fire 2
+    flags[30:33, 30:33] = True          # 9 cells, touches nothing
+    ids = np.zeros((50, 50), np.uint8)
+    ids[8:12, 8:12] = 1
+    ids[5, 5] = 2
+    df = flagged_places(flags, np.zeros((50, 50), int), np.ones((50, 50)), BOUNDS, [50, 50],
+                        other_ids=ids, other_names={1: "Grass", 2: "Bench"})
+    assert df["other_fire"].tolist() == ["Bench; Grass", ""]
+
+
+def test_other_fire_column_empty_without_ids():
+    flags = np.zeros((10, 10), bool)
+    flags[2:4, 2:4] = True
+    df = flagged_places(flags, np.zeros((10, 10), int), np.ones((10, 10)), BOUNDS, [10, 10])
+    assert df["other_fire"].tolist() == [""]
