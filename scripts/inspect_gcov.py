@@ -47,7 +47,6 @@ def main() -> int:
                     u, c = np.unique(vals, return_counts=True)
                     msg += f" unique={dict(zip(u.tolist()[:12], c.tolist()[:12]))}"
             print(msg)
-        src = f.id.get_vfd_handle() if False else None
     print(f"\nelapsed {time.perf_counter() - t0:.1f} s")
     return 0
 

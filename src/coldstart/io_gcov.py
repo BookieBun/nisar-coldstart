@@ -58,7 +58,18 @@ class HTTPRangeFile(io.RawIOBase):
         self._ranges.clear()
 
     def _resolve(self) -> None:
-        r = self.session.get(self.url, headers={"Range": "bytes=0-0"}, allow_redirects=True, timeout=120)
+        import time
+        for attempt in range(self.MAX_TRIES):   # the login redirect occasionally answers 403/5xx when hit in bursts
+            if attempt:
+                time.sleep(self.retry_wait * 2 ** (attempt - 1))
+            try:
+                r = self.session.get(self.url, headers={"Range": "bytes=0-0"}, allow_redirects=True, timeout=120)
+            except OSError:
+                if attempt == self.MAX_TRIES - 1:
+                    raise
+                continue
+            if r.status_code in (200, 206):
+                break
         if r.status_code not in (200, 206):
             raise PermissionError(f"HTTP {r.status_code} opening {self.url}: check ~/.netrc Earthdata credentials "
                                   "and that the NISAR data use agreement is accepted for your account")
@@ -68,17 +79,34 @@ class HTTPRangeFile(io.RawIOBase):
             raise OSError(f"server did not honour a Range request for {self.url}")
         self.size = int(cr.rsplit("/", 1)[1])
 
+    MAX_TRIES = 4
+    retry_wait = 2.0   # seconds; doubled after each failed try
+
     def _get(self, start: int, end: int) -> bytes:
-        for attempt in range(3):
-            r = self.session.get(self._final, headers={"Range": f"bytes={start}-{end}"}, timeout=300)
+        """One byte range. Retries dropped connections, timeouts, 429 and 5xx with backoff, and
+        re-resolves the pre-signed URL on 401/403. Any other status, or a short body, raises."""
+        import time
+        last = "no attempt made"
+        for attempt in range(self.MAX_TRIES):
+            if attempt:
+                time.sleep(self.retry_wait * 2 ** (attempt - 1))
+            try:
+                r = self.session.get(self._final, headers={"Range": f"bytes={start}-{end}"}, timeout=300)
+            except OSError as exc:   # requests' ConnectionError and Timeout derive from OSError
+                last = f"{type(exc).__name__}: {exc}"
+                continue
             if r.status_code == 206:
+                if len(r.content) != end - start + 1:
+                    last = f"short body: {len(r.content)} of {end - start + 1} bytes"
+                    continue
                 self.bytes_fetched += len(r.content)
                 return r.content
-            if r.status_code in (401, 403) and attempt < 2:  # pre-signed URL expired
+            last = f"HTTP {r.status_code}"
+            if r.status_code in (401, 403):   # pre-signed URL expired
                 self._resolve()
-                continue
-            raise OSError(f"HTTP {r.status_code} reading bytes {start}-{end} of {self.url}")
-        raise OSError("unreachable")
+            elif r.status_code != 429 and r.status_code < 500:
+                break
+        raise OSError(f"{last} reading bytes {start}-{end} of {self.url} after {attempt + 1} tries")
 
     def _block(self, i: int) -> bytes:
         b = self._cache.get(i)

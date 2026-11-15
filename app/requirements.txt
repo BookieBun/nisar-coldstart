@@ -1,0 +1,8 @@
+# Only what the read-only viewer imports (keeps hosted installs small).
+streamlit>=1.45
+folium>=0.15
+streamlit-folium>=0.18
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+matplotlib>=3.8
