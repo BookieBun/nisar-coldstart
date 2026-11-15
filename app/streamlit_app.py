@@ -380,6 +380,9 @@ def main() -> None:
                     "does not have yet. This project asks a different question: **on the same two dates, how did all "
                     "the similar-looking land in the scene change?** Places that changed differently from what that "
                     "predicts are flagged.")
+        st.markdown("**Intended use.** A triage aid for an analyst after an event: the map shows where the radar "
+                    "changed more than similar land did, to help decide where to look first. Each flag still needs "
+                    "checking against other imagery or on the ground; nobody uses this operationally yet.")
         st.markdown("The app shows stored results for the 2026 McCully Fire in Oregon, plus a simulated test scene. "
                     "Running the method elsewhere means running the open-source pipeline in the repository.")
         st.markdown("**For specialists.** A gradient-boosted quantile regression, cross-fitted over 10 km tiles, "

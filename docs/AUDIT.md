@@ -55,7 +55,7 @@ evidence is listed as unverified.
 | Cross-fitting isolates folds | Pass | `tests/test_model.py` |
 | Baselines implemented fairly | Pass, with one stated difference | Same grid, mask, calibration and patch rule; B2 is scored on fewer pairs because it needs history |
 | Metrics appropriate | Pass | Precision-recall based, block bootstrap for spatial correlation |
-| Results reproducible | Pass | Refit of M on the event pair identical to the stored score (max difference 0.0); synthetic `metrics.json` identical across runs (`tests/test_end_to_end.py`) |
+| Results reproducible | Pass | Full real-data rerun from an anonymous clone of the public repository (scene search, streaming, every stage; 1 h 53 min) gave identical metrics, intervals and calibration; only the commit and timestamp differ. Refit of M on the event pair identical to the stored score; synthetic `metrics.json` identical across runs (`tests/test_end_to_end.py`) |
 | Failure cases documented | Pass | `EVALUATION.md` sections 5 to 7, `LIMITATIONS.md` |
 | Overfitting | No sign of the burn being fitted away | Out-of-pair and in-sample ablations, `EVALUATION.md` section 4 |
 

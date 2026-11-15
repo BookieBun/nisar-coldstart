@@ -121,6 +121,20 @@ unburned islands inside it cap recall. The conformal guarantee assumes calibrati
 cells are exchangeable. Rainfall (H2) was not tested. Full list:
 [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
+## Who could use it
+
+Nobody uses this operationally. The intended workflow is a triage aid for an analyst after an
+event such as a fire:
+
+1. Choose the area and the share of false alarms you can tolerate.
+2. The map shows where NISAR's radar changed more than similar land in the same scene did.
+3. Click a place to see its radar signal on every date beside the range the model expected.
+4. Use the flags to decide where to look first, then check them against other imagery or on the
+   ground. A flag is a detected change, not confirmed damage.
+
+Before anyone relied on it, it would need testing on more events and sites, comparison with
+burn-severity maps from optical imagery, and field checks of flagged and unflagged places.
+
 ## What comes next
 
 - More events (floods, clearing, other fires), each with hypotheses frozen first.
