@@ -340,7 +340,7 @@ def _plan(cfg, infos: dict[str, GridInfo]) -> tuple[dict[str, tuple], tuple, int
         raise ValueError("the scenes have no common area around the fire")
     if not (cx0 <= fx0 and fx1 <= cx1 and cy0 <= fy0 and fy1 <= cy1):
         raise ValueError("the common scene area does not contain the whole fire bbox; choose another frame")
-    if cx0 > fx0 - b + 1 or cx1 < fx1 + b - 1 or cy0 > fy0 - b + 1 or cy1 < fy1 + b - 1:
+    if cx0 > fx0 - b + C or cx1 < fx1 + b - C or cy0 > fy0 - b + C or cy1 < fy1 + b - C:   # beyond the snap to whole cells
         log.warning("window clipped by the frame edge: buffer is less than %.0f km on some side", cfg.grid.buffer_km)
     windows = {}
     for d, gi in keep.items():

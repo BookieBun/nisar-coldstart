@@ -65,10 +65,17 @@ land, and the share of cells changing by more than 1.5 dB:
 ## What was not tested
 
 - H2 (rainfall), external land cover (WorldCover), optical comparison (OPERA DIST-ALERT).
-- Ablations and sensitivity to aggregation factor, tile size and number of folds.
+- Sensitivity to the aggregation factor (it would need the scenes streamed again). Ablations
+  and sensitivity to tile size and folds were run after the test, as exploratory analysis
+  (`docs/EVALUATION.md`): the result depends on tile size, and added noise of 0.5 dB removes
+  most of every detector's skill.
 - A second site. One fire is one case study, not a general result.
-- The GCOV `mask` layer's semantics: validity is decided from the power values only; the
-  mask's values per date are recorded in `cube_meta.json`.
+- The GCOV `mask` layer is not applied; validity is decided from the power values only. A
+  sensitivity check found the results unchanged without the affected 3.3% of cells
+  (`docs/DATA.md`).
+- The false-alarm patches were not checked against optical imagery.
+- The water threshold (HV at or below -24 dB on every date, 3,978 cells) was not compared with
+  a water map.
 - `numberOfLooks` is not read (to halve streaming volume); no look-count quality filter.
 
 ## Synthetic data

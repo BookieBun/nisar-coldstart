@@ -1,0 +1,2 @@
+# Keep configs byte-identical on every platform: metrics.json records the config file hash.
+*.yaml text eol=lf

@@ -13,9 +13,9 @@ against three baselines, with hypotheses committed before the fire was scored.
 ## Reproduce
 
 ```bash
-pip install -e .
+pip install -e .                                   # Python 3.11; exact versions are in requirements.lock
 python -m coldstart run config/synthetic.yaml      # whole pipeline on simulated scenes, no credentials, ~4 min
-streamlit run app/streamlit_app.py
+streamlit run app/streamlit_app.py                 # opens the committed McCully results
 ```
 
 The real site needs an Earthdata Login in `~/.netrc` (see [docs/DATA.md](docs/DATA.md)):
@@ -26,7 +26,8 @@ python -m coldstart search config/site.yaml
 python -m coldstart run config/site.yaml
 ```
 
-`pytest` runs the test suite (30 tests, under a minute) on synthetic data.
+`pip install -e ".[test]"` then `pytest` runs the test suite (35 tests, about a minute, offline).
+`python scripts/exploratory.py config/site.yaml` reruns the ablations and robustness checks.
 
 ## Results: McCully Fire
 
@@ -81,14 +82,44 @@ absolute performance is low for every detector: M's average precision is 0.066, 
    intervals (H1).
 
 Details and equations: [docs/METHODS.md](docs/METHODS.md). Hypotheses, frozen before scoring:
-[HYPOTHESES.md](HYPOTHESES.md).
+[HYPOTHESES.md](HYPOTHESES.md). Ablations, robustness and failure analysis:
+[docs/EVALUATION.md](docs/EVALUATION.md). Independent audit: [docs/AUDIT.md](docs/AUDIT.md).
+
+```text
+ASF (NISAR GCOV) --> grid --> features --> detect (B1, B2, B3, M) --> calibrate --> evaluate --> export --> app
+NIFC perimeter ---------------------------------------------------------------------^ (evaluation only)
+```
+
+The pipeline is offline and writes small files; the Streamlit app only reads them.
+
+## What the radar shows, and why
+
+- **Which polarizations?** Both. Scoring with HH or HV alone raised false alarms at 50% recall
+  from 0.085 to about 0.145. On this burn HH changed at least as much as HV.
+- **Physical drivers.** L-band penetrates the canopy and responds to branches, trunks and
+  ground moisture. Inside the perimeter backscatter rose slightly by late September (HH +0.7 dB,
+  HV +0.5 dB) and then fell faster than the surrounding land through October (HV -1.7 dB by 29
+  October against -0.9 dB outside). We did not establish the cause; canopy loss exposing a
+  rougher, wetter ground surface is one candidate.
+- **What else moves?** Scene-wide shifts of half a decibel to a decibel between passes are
+  routine (autumn wetting), and valley farmland changes by several decibels. Those are what a
+  plain difference flags and the pooled model absorbs.
 
 ## Limits
 
-One fire is one case study. Real change outside the perimeter counts as false alarms;
+One fire on one track is one case study. Real change outside the perimeter counts as false alarms;
 unburned islands inside it cap recall. The conformal guarantee assumes calibration and event
 cells are exchangeable. Rainfall (H2) was not tested. Full list:
 [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+
+## What comes next
+
+- More events (floods, clearing, other fires), each with hypotheses frozen first.
+- Rainfall and soil moisture as inputs, to test whether the advantage grows when weather
+  differs between dates (H2, not tested here).
+- Interferometric coherence alongside backscatter.
+- Applying the GCOV validity mask, and labelling the largest false-alarm patches against
+  optical imagery.
 
 ## Data credits
 
