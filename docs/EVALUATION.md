@@ -117,8 +117,10 @@ survive half a decibel of added noise.
 
 At the calibrated α = 0.05 threshold, after the minimum-patch filter:
 
-- Flag rates: M flags 38% of burned cells and 2.6% of control cells; B3 29% and 2.6%; B1 4.5%
-  and 2.2%.
+- Flag rates ("burned" here and below means inside the agency perimeter, not verified cell by
+  cell): M flags 38% of burned cells and 2.6% of control cells; B3 29% and 2.6%; B1 4.5%
+  and 2.2%. Of M's 15,729 flagged cells in the window, 12,877 lie more than 2 km outside the
+  perimeter; some of these may be real changes rather than errors.
 - Burned cells are almost all in the two brightest land classes (forest). There M finds 44%
   (class 5) and 25% (class 4) against B3's 32% and 20%, at the same false-alarm rate.
 - False alarms concentrate in the low-backscatter classes (open land and valley floor): about

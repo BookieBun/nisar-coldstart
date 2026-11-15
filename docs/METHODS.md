@@ -89,4 +89,4 @@ detector alike; PR curves use raw scores.
 
 Positives are cells inside the perimeter eroded by one cell; negatives are cells more than
 2 km outside; the ring between, masked cells and other 2026 perimeters are excluded.
-Precision-recall rather than ROC, because burned cells are about 1% of the window.
+Precision-recall rather than ROC, because cells inside the perimeter are about 1% of the window.

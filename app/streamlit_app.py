@@ -134,11 +134,14 @@ def keep_in_mind() -> None:
     with st.expander("Keep in mind"):
         st.markdown(
             "- **One fire is one case study.** Results may differ at other places and for other kinds of change.\n"
-            "- **This burn was hard to see with radar.** Even the best method here misses much of the burned "
-            "area and flags some unburned land. The Evidence tab has the numbers.\n"
+            "- **This burn was hard to see with radar.** At the default setting our model flags about 38% of the "
+            "cells inside the fire perimeter, and most red cells on the map lie outside it. Some of those may be "
+            "real changes of another kind; none were checked on the ground. The Evidence tab has the numbers.\n"
             "- **A flag means \"changed more than expected\", not \"burned\".**\n"
-            "- **The false-alarm setting is a tested promise, not a guarantee.** It held on dates the method had "
-            "not seen at this site, and it assumes those dates behave like the fire dates.\n"
+            "- **The false-alarm setting is a tested target, not a guarantee.** On dates the method had not seen at "
+            "this site, the share of land flagged stayed within half to double the setting. A simpler method that "
+            "compares each place with the average for its land type did almost as well, so this comes mostly from "
+            "that comparison, not from the learning.\n"
             "- The Limits tab has the full list.")
 
 
@@ -235,8 +238,8 @@ def view_validation(D: dict) -> None:
                 "This page shows how they came out, and every number behind them.")
     c1, c2 = st.columns(2)
     for col, key, name, text in (
-            (c1, "H1", "Test 1", "With every method set to find half of the burned area, ours flags the least unburned land."),
-            (c2, "H3", "Test 2", "The false-alarm setting held on pairs of dates the calibration had not seen.")):
+            (c1, "H1", "Test 1", "With every method set to flag half of the cells inside the fire perimeter, ours flags the least land outside it."),
+            (c2, "H3", "Test 2", "On pairs of dates the calibration had not seen, the share of land flagged stayed within half to double the setting.")):
         ok = h[key]["pass"]
         col.markdown(f"### {name} ({key}): {'PASS' if ok else 'FAIL'}")
         col.caption(text)
@@ -247,7 +250,7 @@ def view_validation(D: dict) -> None:
                f"Code version: commit {met['commit'][:10]}.")
 
     pct = f"{odds(met['report_alpha'])} setting"
-    cols = {"far": "Unburned land flagged when half the burn is found", "rec": "Burn found at 1 in 100 false alarms",
+    cols = {"far": "Land outside the perimeter flagged, when half the inside is flagged", "rec": "Inside cells flagged at a 1 in 100 false-alarm setting",
             "ap": "Ranking quality", "f1": f"Map agreement at the {pct}"}
     rows = []
     for d in ("M", "B3", "B2", "B1"):
@@ -269,17 +272,22 @@ def view_validation(D: dict) -> None:
     })
     st.caption("All values are fractions between 0 and 1. Brackets give the 95% range from re-drawing 5 km blocks "
                "of the map (block bootstrap). Hover over a column heading for its technical name.")
+    st.caption("**Inside** means inside the agency-mapped fire perimeter (shrunk by one cell); **outside** means more "
+               "than 2 km beyond it. Neither was checked cell by cell: the perimeter encloses patches that did not "
+               "burn, and some flags outside it may be real changes such as other fires or farm work. In these "
+               "scores every flag outside counts as a false alarm, so they describe agreement with the perimeter, "
+               "not confirmed burn detection.")
 
     cv = D["curves"]
     fig, ax = plt.subplots(1, 2, figsize=(11, 4))
     for d, g in cv.groupby("detector"):
         ax[0].plot(g.recall, g.precision, color=COLORS.get(d), label=DET_SHORT.get(d, d), lw=1.6)
         ax[1].plot(g.far, g.recall, color=COLORS.get(d), label=DET_SHORT.get(d, d), lw=1.6)
-    ax[0].set(xlabel="Share of the burn found (recall)", ylabel="Share of flags inside the burn (precision)",
+    ax[0].set(xlabel="Share of inside cells flagged (recall)", ylabel="Share of flags that are inside (precision)",
               xlim=(0, 1), ylim=(0, 1), title="Precision-recall")
-    ax[1].set(xlabel="Share of unburned land flagged (false-alarm rate, log scale)",
-              ylabel="Share of the burn found (recall)", xscale="log", xlim=(1e-4, 1), ylim=(0, 1),
-              title="Burn found against false alarms")
+    ax[1].set(xlabel="Share of outside land flagged (false-alarm rate, log scale)",
+              ylabel="Share of inside cells flagged (recall)", xscale="log", xlim=(1e-4, 1), ylim=(0, 1),
+              title="Inside flagged against outside flagged")
     for a in ax:
         a.grid(alpha=0.3)
         a.legend(frameon=False)
@@ -303,9 +311,9 @@ def view_validation(D: dict) -> None:
         st.markdown("#### Where each method succeeds and fails, by land type")
         ft = D["failure"].copy()
         ft["detector"] = ft["detector"].map(lambda d: DET_NAMES.get(d, d))
-        ft = ft.rename(columns={"detector": "Method", "class": "Land-type group", "n_pos": "Burned cells",
-                                "n_neg": "Unburned cells", "recall": "Share of burned cells flagged (recall)",
-                                "far": "Share of unburned cells flagged (false-alarm rate)"})
+        ft = ft.rename(columns={"detector": "Method", "class": "Land-type group", "n_pos": "Cells inside perimeter",
+                                "n_neg": "Cells outside (over 2 km)", "recall": "Share of inside cells flagged (recall)",
+                                "far": "Share of outside cells flagged (false-alarm rate)"})
         st.dataframe(ft, hide_index=True, width="stretch")
         st.caption(f"At the {pct}. Land-type groups run from the darkest radar return (0, open land) to the "
                    "brightest (5, dense forest); they are clusters of radar brightness before the fire.")
@@ -316,7 +324,7 @@ def view_limits() -> None:
         "#### In short\n"
         "- This is one fire at one site, seen from one satellite track.\n"
         "- The method finds changes; it does not confirm what caused them.\n"
-        "- On this fire every method, including ours, misses much of the burned area.\n"
+        "- On this fire every method, including ours, flags well under half of the cells inside the perimeter.\n"
         "- The reference outline has its own errors: unburned patches inside it, real changes outside it.\n"
         "- The app shows stored results. It does not analyse new places or dates.\n\n"
         "The full technical list follows.\n\n---")

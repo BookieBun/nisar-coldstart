@@ -8,7 +8,7 @@ state before the event; cells that depart from that expectation are flagged at a
 rate fixed in advance by conformal calibration. We test it on the 2026 McCully Fire (Oregon)
 against three baselines, with hypotheses committed before the fire was scored.
 
-**Result on the McCully Fire:** both pre-registered hypotheses pass. At 50% recall the model raises 8.5% false alarms against 12.8% for the best baseline, and on all 14 leave-one-pair-out checks its realized false-alarm rate stayed within half to double the target (the land-type baseline managed 12 of 14).
+**Result on the McCully Fire:** both pre-registered hypotheses pass. Set to flag half of the cells inside the fire perimeter, the model also flags 8.5% of the land more than 2 km outside it, against 12.8% for the best baseline. On all 14 leave-one-pair-out checks its realized false-alarm rate stayed within half to double the target; the simpler land-type baseline managed 12 of 14, so most of that stability comes from normalizing by land type. This is a method for detecting radar-observed change at a controlled false-alarm rate, not a validated burn map.
 
 **Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully Fire; no login needed)
 
@@ -33,8 +33,11 @@ python -m coldstart run config/site.yaml
 
 ## Results: McCully Fire
 
-Event pair 2026-08-18 to 2026-09-23 (NISAR track 077 A, frame 024); 4,292 burned cells and
-490,753 control cells at 100 m (burned share 0.9%). Brackets: 95% block-bootstrap
+Event pair 2026-08-18 to 2026-09-23 (NISAR track 077 A, frame 024); 4,292 cells inside the agency
+fire perimeter ("burned" in the tables) and 490,753 control cells more than 2 km outside it, at
+100 m (inside share 0.9%). Neither group was verified cell by cell: the perimeter encloses
+unburned patches, and some control cells may have changed for other reasons, so every flag
+outside counts as a false alarm here without being a confirmed error. Brackets: 95% block-bootstrap
 intervals (5 km blocks, 500 resamples). Hypotheses frozen in commit `6994eb2` before scoring.
 
 | Detector | FAR at 50% recall | Recall at 1% FAR | Average precision | F1 at α = 0.05 |
@@ -58,11 +61,15 @@ M-minus-baseline interval lies below zero (against B3: -0.044 [-0.067, -0.032]).
 | B1, log-ratio | 2 of 14 | 0.010 to 0.146 |
 
 The pooled model's false-alarm rate is predictable from pair to pair; the log-ratio's swings
-by a factor of fifteen. That is the cold-start problem the method targets.
+by a factor of fifteen. The land-type baseline is nearly as steady, so most of this comes from
+normalizing each cell's change by what similar land did, which both share; the learned model adds
+a little. Part of the pass is built into how the score is normalized
+([docs/EVALUATION.md](docs/EVALUATION.md), section 2).
 
 **What this does not show.** The burn's signal at 100 m on this date pair is modest, so
 absolute performance is low for every detector: M's average precision is 0.066, about
-8 times the burned share. This is one fire on one track. See [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+8 times the inside share. At the default 1-in-20 setting M flags 38% of the cells inside the
+perimeter, and most of its flags lie outside it. This is one fire on one track. See [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ![Precision-recall curves](artifacts/mccully/figures/pr_curves.png)
 ![Leave-one-pair-out calibration](artifacts/mccully/figures/h3_realized.png)
