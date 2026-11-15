@@ -160,7 +160,8 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         folium.raster_layers.ImageOverlay(image=to_mercator_rows(img, s, n), bounds=b, name=name,
                                           opacity=0.85 if radar else 1.0, show=show).add_to(m)
     folium.LayerControl(collapsed=False).add_to(m)
-    how_to_read(det, alpha)
+    st.markdown("**Red** = flagged as changed. **Cyan outline** = the mapped edge of the fire. **Grey** = the radar "
+                "image. A red cell is a detected change, not confirmed fire damage; the full guide is below the map.")
     left, right = st.columns([3, 2])
     with left:
         out = st_folium(m, height=620, use_container_width=True, returned_objects=["last_clicked"], key=f"map_{site}")
@@ -171,6 +172,7 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         if click:
             st.session_state["click"] = (click["lat"], click["lng"])
         view_inspector(D, st.session_state.get("click"))
+    how_to_read(det, alpha)
     keep_in_mind()
 
 
@@ -358,21 +360,24 @@ def main() -> None:
         st.markdown("---")
         st.caption("A cell is flagged when its change score is above the threshold. Flagged patches smaller than "
                    "4 cells are then removed, so the map usually shows fewer false alarms than the setting.")
-    st.title("Cold Start: finding change with a brand-new radar")
-    st.markdown(f"**Study site: {SITE_NAMES.get(site, site)}**")
-    st.markdown("NISAR is a NASA-ISRO radar satellite whose calibrated images begin on 17 June 2026. Most methods for "
-                "spotting change in radar images compare each place with years of its own past, which NISAR does "
-                "not have yet. This project asks a different question: **on the same two dates, how did all the "
-                "similar-looking land in the scene change?** Places that changed differently from what that "
-                "predicts are flagged.")
-    st.info("This app shows **precomputed results for one study site**, the 2026 McCully Fire in Oregon, plus a "
-            "simulated test scene. It does not analyse other places or new dates. Running the method elsewhere "
-            "means running the open-source pipeline in the repository.")
-    with st.expander("For specialists: the method in one paragraph"):
-        st.markdown("A gradient-boosted quantile regression, cross-fitted over 10 km tiles, predicts each 100 m "
-                    "cell's change in L-band HH and HV backscatter from its state on the earlier date, using "
-                    "**all pixels in the scene on the same two dates**. Cells are scored by their residual scaled "
-                    "by the predicted spread, and flagged at a false-alarm rate set in advance by conformal "
+    st.title("Cold Start")
+    st.markdown("Finding surface change with NISAR, a radar too new to have a history. "
+                f"**Study site: {SITE_NAMES.get(site, site)}**")
+    st.markdown("Red cells on the map are places that changed more than the rest of the scene predicts, between a "
+                "radar image taken before the event and one taken after. These are **precomputed results for one "
+                "study site**; the app does not analyse other places or new dates.")
+    with st.expander("What is this, and how does it work?"):
+        st.markdown("NISAR is a NASA-ISRO radar satellite whose calibrated images begin on 17 June 2026. Many methods "
+                    "for spotting change in radar images compare each place with years of its own past, which NISAR "
+                    "does not have yet. This project asks a different question: **on the same two dates, how did all "
+                    "the similar-looking land in the scene change?** Places that changed differently from what that "
+                    "predicts are flagged.")
+        st.markdown("The app shows stored results for the 2026 McCully Fire in Oregon, plus a simulated test scene. "
+                    "Running the method elsewhere means running the open-source pipeline in the repository.")
+        st.markdown("**For specialists.** A gradient-boosted quantile regression, cross-fitted over 10 km tiles, "
+                    "predicts each 100 m cell's change in L-band HH and HV backscatter from its state on the earlier "
+                    "date, using all pixels in the scene on the same two dates. Cells are scored by their residual "
+                    "scaled by the predicted spread, and flagged at a false-alarm rate set in advance by conformal "
                     "calibration on date pairs with no event. Three baselines run on the same grid: log-ratio, a "
                     "short-baseline z-score and a stratified class shift.")
     t1, t2, t3 = st.tabs(["Map", "Evidence", "Limits"])

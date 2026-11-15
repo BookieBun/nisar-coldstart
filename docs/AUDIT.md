@@ -65,7 +65,7 @@ evidence is listed as unverified.
 | --- | --- | --- |
 | Test suite | 35 tests pass, offline, about a minute | `pytest` on the working tree |
 | Clean install | See "Fresh clone" below | |
-| Credentials | None in the repository or its history | Scan of tracked files for credential patterns; `data/`, `.netrc`, `_netrc`, `*.h5` ignored; three commits inspected |
+| Credentials | None in the repository or its history | Scan of tracked files for credential patterns; `data/`, `.netrc`, `_netrc`, `*.h5` ignored; full commit history scanned before the repository was made public |
 | App security | Reads local artifact files only; takes no file paths or free text from the user | Code read |
 | Dependencies | All imported packages declared; none unused in the pipeline | Import scan against `pyproject.toml` |
 | Performance | Real run: about 19 min to stream 11 dates, 16 min to score 8 pairs, 1 min to evaluate, on a laptop | Run log |
@@ -80,7 +80,7 @@ evidence is listed as unverified.
 | Flags and thresholds match the pipeline | Pass by construction | Flags are computed in `export.py` with the same function as the metrics |
 | Perimeter aligned with the radar image | Pass | `artifacts/mccully/figures/overlay_check.png` |
 | Observed data distinguished from predictions | Pass | Inspector plots measured HH and HV as lines and the model's expected 5 to 95% range as a separate marker |
-| Public deployment | **Not done** | The app has only been run locally |
+| Public deployment | Pass | https://nisar-coldstart.streamlit.app, Python 3.11; full exercise on both sites from a signed-out browser, desktop and phone (2026-11-14) |
 
 ## Fresh clone
 
@@ -97,6 +97,22 @@ app started from that environment.
 | App from the fresh install | Health endpoint returned 200 |
 
 The config hash differed because the fresh checkout had Windows line endings (finding L-12).
+
+## Final review (2026-11-14, after deployment)
+
+Re-checked on an anonymous clone of the public repository and the live app in a signed-out
+browser.
+
+| ID | Severity | Finding | Status |
+| --- | --- | --- | --- |
+| R-1 | Medium | On a 1366x768 screen the map began below the first screen; a visitor saw only text | **Fixed**: short intro, explanation folded away, guide moved below the map. About half the map is now visible on load |
+| R-2 | Medium | The deck said the model "kept its promised false-alarm rate" and that the method "needs two images" | **Fixed**: "stayed within half to double its target"; "needs months of images, not years" (calibration uses the other date pairs) |
+| R-3 | Medium | H3 is partly guaranteed by the score's construction (see `EVALUATION.md` section 2) | **Documented**; the claim is worded accordingly |
+| R-4 | Low | One of M's 14 H3 checks passes by a margin of 0.00004 (0.01996 against 0.02) | Documented |
+| R-5 | Low | Commit timestamps are set locally; the repository was private until 22:48 UTC on 2026-11-14, so the freeze order cannot be proven by an outside party | Documented |
+| R-6 | Low | Test coverage 79% overall; `download` 21%, `search` 26%, `io_gcov` 53%. No continuous integration. `ruff` reports 33 minor findings | Open |
+| R-7 | Low | `requirements.lock` was generated on Windows (includes `colorama`); other platforms should install from `requirements.txt` | Open |
+| R-8 | Low | The stale "Public deployment: Not done" line in this file | **Fixed** |
 
 ## Unverified
 

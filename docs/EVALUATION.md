@@ -46,7 +46,11 @@ Thresholds from six no-event pairs, applied to the seventh; raw realized false-a
 
 **H3 passes**, with one caveat: M's largest rate at α = 0.01 is 0.0200, exactly on the upper
 edge of the band. B3 also calibrates well, so most of the calibration benefit comes from
-normalizing by land class; the learned model adds a little. B2 is scored on five pairs only
+normalizing by land class; the learned model adds a little. Part of the pass is built into the
+score: it is a residual divided by a predicted spread, so its distribution barely moves between
+date pairs. Across the seven no-event pairs, M's 95th-percentile score varies by 13% and B3's by
+10%, against 157% for B1. H3 therefore shows that a normalized score calibrates on held-out
+dates; it does not show that learning calibrates better than class normalization. B2 is scored on five pairs only
 (it needs two same-regime history dates).
 
 ## 3. Reproducibility on real data (exploratory)

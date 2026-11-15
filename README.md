@@ -8,7 +8,7 @@ state before the event; cells that depart from that expectation are flagged at a
 rate fixed in advance by conformal calibration. We test it on the 2026 McCully Fire (Oregon)
 against three baselines, with hypotheses committed before the fire was scored.
 
-**Result on the McCully Fire:** both pre-registered hypotheses pass. At 50% recall the model raises 8.5% false alarms against 12.8% for the best baseline, and its calibrated false-alarm rate held on all 14 leave-one-pair-out checks.
+**Result on the McCully Fire:** both pre-registered hypotheses pass. At 50% recall the model raises 8.5% false alarms against 12.8% for the best baseline, and on all 14 leave-one-pair-out checks its realized false-alarm rate stayed within half to double the target (the land-type baseline managed 12 of 14).
 
 **Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully Fire; no login needed)
 
