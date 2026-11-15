@@ -54,3 +54,15 @@ well. A failure is reported as a result, with the same figures, in the README an
   the window. It is excluded from the labels, but its change remains in the 07-15 to 07-27
   calibration pair, which raises thresholds for every method.
 - The window is in the Cascade Range, with steeper terrain than McCully.
+
+## Results (appended after scoring; nothing above was edited)
+
+Scored on 2026-11-15 with the code at commit `e1b0a57`; the analysis code is unchanged from the
+McCully freeze except the streaming reader's retry and logging. Full numbers are in
+`artifacts/austin/metrics.json` and `calibration.json`.
+
+- **H1: FAIL.** vs B1: pass (FAR@R50 M=0.2780, B1=0.5337, diff CI95 upper=-0.2098); vs B2: pass (FAR@R50 M=0.2780, B2=0.4709, diff CI95 upper=-0.1493); vs B3: fail (FAR@R50 M=0.2780, B3=0.2792, diff CI95 upper=+0.0094)
+- **H3: PASS.** M within [α/2, 2α] on 10 of 10 left-out checks (α = 1% and 5%, five no-event pairs).
+- **H2:** not tested.
+
+The calibration result replicated; the advantage over the land-type baseline did not.

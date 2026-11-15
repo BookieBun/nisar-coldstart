@@ -1,0 +1,129 @@
+{
+  "site": "austin",
+  "event_pair": "20260727_20261007",
+  "n_inside": 4841,
+  "n_outside": 458923,
+  "negative_buffer_km": 2.0,
+  "detectors": {
+    "B1": {
+      "0.01": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.0017192426616229738,
+        "heldout_min": 0.0009761568497133837,
+        "heldout_max": 0.04533729334551798,
+        "heldout_pairs": 5
+      },
+      "0.02": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.004935468477282681,
+        "heldout_min": 0.0013084655645094292,
+        "heldout_max": 0.0914949738306887,
+        "heldout_pairs": 5
+      },
+      "0.05": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.02184898120163949,
+        "heldout_min": 0.0028225471462989117,
+        "heldout_max": 0.21985336877959624,
+        "heldout_pairs": 5
+      },
+      "0.1": {
+        "inside_flagged": 0.003924808923776079,
+        "outside_flagged": 0.06171623562122622,
+        "heldout_min": 0.00697640608124948,
+        "heldout_max": 0.3930235939187505,
+        "heldout_pairs": 5
+      }
+    },
+    "B2": {
+      "0.01": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.001061180197985283,
+        "heldout_min": 0.00021807759408490487,
+        "heldout_max": 0.30814364044197057,
+        "heldout_pairs": 3
+      },
+      "0.02": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.002996145322853725,
+        "heldout_min": 0.00031569327905624326,
+        "heldout_max": 0.38664534352413393,
+        "heldout_pairs": 3
+      },
+      "0.05": {
+        "inside_flagged": 0.001032844453625284,
+        "outside_flagged": 0.014259472722003473,
+        "heldout_min": 0.0006604635706571405,
+        "heldout_max": 0.5147731993021517,
+        "heldout_pairs": 3
+      },
+      "0.1": {
+        "inside_flagged": 0.005577360049576534,
+        "outside_flagged": 0.04581814378446929,
+        "heldout_min": 0.0023531610866494974,
+        "heldout_max": 0.6245389216582204,
+        "heldout_pairs": 3
+      }
+    },
+    "B3": {
+      "0.01": {
+        "inside_flagged": 0.012600702334228464,
+        "outside_flagged": 0.004499665521231231,
+        "heldout_min": 0.006133172717454515,
+        "heldout_max": 0.014210351416465896,
+        "heldout_pairs": 5
+      },
+      "0.02": {
+        "inside_flagged": 0.029539351373683125,
+        "outside_flagged": 0.010871104738703443,
+        "heldout_min": 0.013570657140483508,
+        "heldout_max": 0.024707152945085985,
+        "heldout_pairs": 5
+      },
+      "0.05": {
+        "inside_flagged": 0.0927494319355505,
+        "outside_flagged": 0.027758469285697165,
+        "heldout_min": 0.0419747445376755,
+        "heldout_max": 0.05683517487746116,
+        "heldout_pairs": 5
+      },
+      "0.1": {
+        "inside_flagged": 0.19520760173517868,
+        "outside_flagged": 0.055963636601347067,
+        "heldout_min": 0.0960081415635125,
+        "heldout_max": 0.10666278973166071,
+        "heldout_pairs": 5
+      }
+    },
+    "M": {
+      "0.01": {
+        "inside_flagged": 0.032637884734558975,
+        "outside_flagged": 0.002244385223664972,
+        "heldout_min": 0.005557863254963861,
+        "heldout_max": 0.017257206945252138,
+        "heldout_pairs": 5
+      },
+      "0.02": {
+        "inside_flagged": 0.04730427597603801,
+        "outside_flagged": 0.005092357541461204,
+        "heldout_min": 0.01313865581124865,
+        "heldout_max": 0.029444629060397107,
+        "heldout_pairs": 5
+      },
+      "0.05": {
+        "inside_flagged": 0.1152654410245817,
+        "outside_flagged": 0.014786794298825729,
+        "heldout_min": 0.04155312785577802,
+        "heldout_max": 0.06015826202542161,
+        "heldout_pairs": 5
+      },
+      "0.1": {
+        "inside_flagged": 0.22536665978103698,
+        "outside_flagged": 0.0382068451570307,
+        "heldout_min": 0.09358228794550137,
+        "heldout_max": 0.10655686632881947,
+        "heldout_pairs": 5
+      }
+    }
+  }
+}

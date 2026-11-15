@@ -5,19 +5,20 @@ compare each pixel with years of its own history, which NISAR does not have yet.
 replaces that history with the rest of the scene: a gradient-boosted quantile model learns, from
 every pixel on the same two dates, how much backscatter change to *expect* for a cell given its
 state before the event; cells that depart from that expectation are flagged at a false-alarm
-rate fixed in advance by conformal calibration. We test it on the 2026 McCully Fire (Oregon)
-against three baselines, with hypotheses committed before the fire was scored.
+rate fixed in advance by conformal calibration. We test it on two 2026 fires in Oregon against
+three baselines, with the hypotheses for each committed before it was scored: McCully first,
+then Austin as a pre-registered replication.
 
-**Result on the McCully Fire:** both pre-registered hypotheses pass. Set to flag half of the cells inside the fire perimeter, the model also flags 8.5% of the land more than 2 km outside it, against 12.8% for the best baseline. On all 14 leave-one-pair-out checks its realized false-alarm rate stayed within half to double the target; the simpler land-type baseline managed 12 of 14, so most of that stability comes from normalizing by land type. This is a method for detecting radar-observed change at a controlled false-alarm rate, not a validated burn map.
+**Results.** On the McCully Fire both pre-registered hypotheses pass: set to flag half of the cells inside the fire perimeter, the model also flags 8.5% of the land more than 2 km outside it, against 12.8% for the best baseline. On the Austin Fire, a replication registered and pushed before its data were processed, the calibration result holds again (10 of 10 held-out checks within range) but the advantage does not: the model and the simpler land-type baseline tie (27.8% against 27.9%), while both clearly beat the standard log-ratio and short-history methods. The land-type baseline also calibrates almost as well (22 of 24 checks across both fires), so most of the calibration comes from comparing each place with similar land. This is a method for detecting radar-observed change at a controlled false-alarm rate, not a validated burn map.
 
-**Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully Fire; no login needed)
+**Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully and Austin fires; no login needed)
 
 ## Reproduce
 
 ```bash
 pip install -e .                                   # Python 3.11; exact versions are in requirements.lock
 python -m coldstart run config/synthetic.yaml      # whole pipeline on simulated scenes, no credentials, ~4 min
-streamlit run app/streamlit_app.py                 # opens the committed McCully results
+streamlit run app/streamlit_app.py                 # opens the committed McCully and Austin results
 ```
 
 The real site needs an Earthdata Login in `~/.netrc` (see [docs/DATA.md](docs/DATA.md)):
@@ -28,7 +29,10 @@ python -m coldstart search config/site.yaml
 python -m coldstart run config/site.yaml
 ```
 
-`pip install -e ".[test]"` then `pytest` runs the test suite (35 tests, about a minute, offline).
+The replication runs the same way with `config/site_austin.yaml`. `python scripts/flag_summary.py` and `python scripts/compare_figure.py` (same argument) rebuild the app's
+per-setting summary and side-by-side figure from stored outputs.
+
+`pip install -e ".[test]"` then `pytest` runs the test suite (38 tests, about a minute and a half, offline).
 `python scripts/exploratory.py config/site.yaml` reruns the ablations and robustness checks.
 
 ## Results: McCully Fire
@@ -75,6 +79,58 @@ perimeter, and most of its flags lie outside it. This is one fire on one track. 
 ![Leave-one-pair-out calibration](artifacts/mccully/figures/h3_realized.png)
 ![Maps](artifacts/mccully/figures/maps.png)
 
+## Replication: Austin Fire (pre-registered)
+
+The site, the event pair and every setting were fixed by rules written down in
+[HYPOTHESES_REPLICATION.md](HYPOTHESES_REPLICATION.md), which was pushed to GitHub at 20:21:03
+UTC on 15 November 2026 (GitHub's activity log) before any radar data for this site were
+processed. `config/site_austin.yaml` differs from `config/site.yaml` only in the site-specific
+fields.
+
+Event pair 2026-07-27 to 2026-10-07 (NISAR track 106 A, frame 024); 4,841 cells inside
+the perimeter and 458,923 control cells (inside share 1.0%). Brackets: 95%
+block-bootstrap intervals.
+
+| Detector | FAR at 50% recall | Recall at 1% FAR | Average precision |
+| --- | --- | --- | --- |
+| **M, pooled conditional model** | 0.278 [0.263, 0.320] | 0.069 [0.043, 0.078] | 0.027 [0.004, 0.055] |
+| B3, stratified class shift | 0.279 [0.261, 0.326] | 0.027 [0.012, 0.038] | 0.019 [0.003, 0.041] |
+| B2, short-baseline z-score | 0.471 [0.443, 0.498] | 0.001 [0.000, 0.004] | 0.010 [0.002, 0.021] |
+| B1, log-ratio | 0.534 [0.501, 0.571] | 0.003 [0.001, 0.004] | 0.009 [0.002, 0.019] |
+
+**H1: fail.** The model beats the log-ratio (-0.256 [-0.286, -0.210]) and the
+short-history z-score (-0.193 [-0.218, -0.149]), but ties the land-type
+baseline: -0.001 [-0.022, +0.009], an interval that includes zero.
+
+**H3: pass.**
+
+| Detector | Left-out checks within [α/2, 2α] | Realized rate at α = 0.05, range over pairs |
+| --- | --- | --- |
+| **M, pooled conditional model** | 10 of 10 | 0.042 to 0.060 |
+| B3, stratified class shift | 10 of 10 | 0.042 to 0.057 |
+| B2, short-baseline z-score | 0 of 6 | 0.001 to 0.515 |
+| B1, log-ratio | 4 of 10 | 0.003 to 0.220 |
+
+**Reading the two fires together.** The calibration result replicated: on both fires the
+false-alarm setting held on every held-out check. The land-type baseline held on 22 of 24
+checks across the two fires, so most of that comes from comparing each place with similar land,
+which both methods do. The model's extra advantage over the land-type baseline, clear on
+McCully, did not replicate on Austin at the pre-registered operating point. On secondary
+measures reported by the same frozen evaluation (not part of H1), the model found more of the
+inside at a 1% false-alarm rate (0.069 against 0.027;
+difference +0.042 [+0.028, +0.049]) and ranked better overall (average precision
+difference +0.007 [+0.001, +0.015]); these do not change the H1 verdict.
+
+**What this does not show.** Detection on this pair is weak for every method: the model's
+average precision is 0.027, about 2.5 times the inside share. At the
+default 1-in-20 setting it flags 11.5% of the cells inside the perimeter and
+1.5% of the land outside it (558 and 6,786 cells). The event pair
+spans 72 days (McCully: 36), and the Grasshopper Fire overlaps the window's north-east edge,
+inside one calibration pair; both were noted before processing.
+
+![Same setting, two methods (Austin)](artifacts/austin/figures/compare_methods.png)
+![Leave-one-pair-out calibration (Austin)](artifacts/austin/figures/h3_realized.png)
+
 ## How it works
 
 1. **Window.** The fire's bounding box plus 30 km, streamed from eleven NISAR GCOV scenes of one
@@ -116,7 +172,8 @@ The pipeline is offline and writes small files; the Streamlit app only reads the
 
 ## Limits
 
-One fire on one track is one case study. Real change outside the perimeter counts as false alarms;
+Two fires, each on one track, are a small sample; the second reproduced the calibration result but
+not the advantage over the land-type baseline. Real change outside the perimeter counts as false alarms;
 unburned islands inside it cap recall. The conformal guarantee assumes calibration and event
 cells are exchangeable. Rainfall (H2) was not tested. Full list:
 [docs/LIMITATIONS.md](docs/LIMITATIONS.md).

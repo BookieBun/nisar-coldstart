@@ -47,6 +47,16 @@ products (`_001` to `_003`); the latest reprocessing is used. The exact list is 
   news reports give 87% containment on 2026-09-15. 2026-09-23 is the first acquisition after.
 - 13 other 2026 perimeters intersect the window; they are excluded from the labels.
 
+## Replication site: Austin Fire
+
+- Chosen 2026-11-15 by the rules in `HYPOTHESES_REPLICATION.md`: NISAR track 106 ascending, frame 024,
+  mode 4005, dual-pol HH/HV; 11 dates, 2026-06-21 to 2026-10-31.
+- Fire: discovered 2026-08-09; final perimeter 12,888 acres, last updated 2026-09-29 (WFIGS); no
+  containment date recorded. Event pair 2026-07-27 to 2026-10-07 by the McCully rule.
+- Six other 2026 perimeters intersect the window and are excluded from the labels, including the
+  Grasshopper Fire (about 94,000 acres, discovered 2026-07-24) on the north-east edge.
+- Cube: 668 x 759 cells of 100 m, 95.0% valid; the full 30 km buffer fits inside the frame.
+
 ## Resolved [VERIFY] items (from a streamed GCOV file, 2026-11-14)
 
 | Item | Finding |

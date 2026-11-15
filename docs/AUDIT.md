@@ -9,8 +9,9 @@ evidence is listed as unverified.
 - The implementation matches the frozen methodology, and the reported results reproduce.
 - No critical findings. Two high findings, both fixed. Four medium findings: two fixed, two
   left as documented limitations because fixing them would change the frozen test.
-- The headline claim is supported as stated: on one fire, M raises fewer false alarms than
-  three baselines at equal recall and keeps its calibrated rate. Nothing broader is supported.
+- The McCully claims are supported as stated. A pre-registered replication on the Austin Fire
+  reproduced the calibration result but not M's advantage over the land-type baseline (H1
+  failed there); the README reports both. Nothing broader is supported.
 
 ## Findings, by severity
 
@@ -113,6 +114,7 @@ browser.
 | R-6 | Low | Test coverage 79% overall; `download` 21%, `search` 26%, `io_gcov` 53%. No continuous integration. `ruff` reports 33 minor findings | Open |
 | R-7 | Low | `requirements.lock` was generated on Windows (includes `colorama`); other platforms should install from `requirements.txt` | Open |
 | R-8 | Low | The stale "Public deployment: Not done" line in this file | **Fixed** |
+| R-9 | High | The result rested on one fire | **Addressed by a pre-registered replication** (Austin). Its pre-registration was pushed at 20:21:03 UTC on 2026-11-15 per GitHub's activity log, before processing; H3 replicated, H1 did not. This also gives the replication the server-side timestamp that R-5 notes McCully lacks |
 
 ## Unverified
 

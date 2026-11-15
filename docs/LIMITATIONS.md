@@ -69,7 +69,9 @@ land, and the share of cells changing by more than 1.5 dB:
   and sensitivity to tile size and folds were run after the test, as exploratory analysis
   (`docs/EVALUATION.md`): the result depends on tile size, and added noise of 0.5 dB removes
   most of every detector's skill.
-- A second site. One fire is one case study, not a general result.
+- More sites. Two fires, one of them a pre-registered replication, are a small sample, not a
+  general result. The replication (Austin) reproduced the calibration result but not the model's
+  advantage over the land-type baseline, and detection there was weak for every method.
 - The GCOV `mask` layer is not applied; validity is decided from the power values only. A
   sensitivity check found the results unchanged without the affected 3.3% of cells
   (`docs/DATA.md`).

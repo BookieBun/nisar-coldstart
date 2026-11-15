@@ -6,7 +6,7 @@ from conftest import ROOT, small_synthetic_dict, write_config
 
 
 def test_shipped_configs_load():
-    for name in ("synthetic.yaml", "site.yaml"):
+    for name in ("synthetic.yaml", "site.yaml", "site_austin.yaml"):
         cfg = load_config(ROOT / "config" / name)
         assert cfg.seed == 20261114
 
