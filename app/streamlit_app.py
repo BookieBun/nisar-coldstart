@@ -469,19 +469,21 @@ def view_sites_summary() -> None:
         mk, mn = h3_count(cal, "M")
         role = SITE_ROLE.get(x, "").removeprefix("the ")
         rows.append({"Fire": SITE_NAMES.get(x, x).split(",")[0] + (f" ({role})" if role else ""),
-                     "Dates compared": f"{a} to {b}",
-                     "Test 1: fewest false alarms": "PASS" if h["H1"]["pass"] else "FAIL",
-                     "Test 2: setting held": f"{'PASS' if h['H3']['pass'] else 'FAIL'} ({mk} of {mn})",
-                     "Outside land flagged, ours": pct1(dets["M"]["far_at_recall50"]),
-                     "Best other method": f"{pct1(dets[best]['far_at_recall50'])} ({DET_SHORT[best]})"})
+                     "Dates compared": f"{a} to {b[5:]}",
+                     "Test 1": "PASS" if h["H1"]["pass"] else "FAIL",
+                     "Test 2": f"{'PASS' if h['H3']['pass'] else 'FAIL'} ({mk} of {mn})",
+                     "Outside land flagged: ours vs best other method":
+                         f"{pct1(dets['M']['far_at_recall50'])} vs {pct1(dets[best]['far_at_recall50'])} "
+                         f"({DET_SHORT[best]})"})
     if len(rows) < 2:
         return
     st.markdown(f"#### {'Both' if len(rows) == 2 else 'All ' + str(NUM_WORDS.get(len(rows), len(rows)))} fires "
                 "at a glance")
     st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
-    st.caption("Each fire's tests were written down before it was scored. \"Outside land flagged\" is the share of "
-               "land more than 2 km outside the perimeter that a method flags when it finds half of the inside "
-               "(lower is better). The selected site's details follow.")
+    st.caption("Each fire's tests were written down before it was scored. Test 1: our model flags the least land "
+               "outside the perimeter. Test 2: the false-alarm setting held on dates left out of calibration. "
+               "\"Outside land flagged\" is the share of land more than 2 km outside the perimeter that a method "
+               "flags when it finds half of the inside (lower is better). The selected site's details follow.")
 
 
 def view_other_fires(D: dict) -> None:
