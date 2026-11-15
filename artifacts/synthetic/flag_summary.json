@@ -1,0 +1,129 @@
+{
+  "site": "synthetic",
+  "event_pair": "20260806_20260818",
+  "n_inside": 2404,
+  "n_outside": 149209,
+  "negative_buffer_km": 2.0,
+  "detectors": {
+    "B1": {
+      "0.01": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.0,
+        "heldout_min": 0.0021186711082181466,
+        "heldout_max": 0.021263289555972485,
+        "heldout_pairs": 4
+      },
+      "0.02": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 2.680803436790006e-05,
+        "heldout_min": 0.004690431519699813,
+        "heldout_max": 0.03902949547548851,
+        "heldout_pairs": 4
+      },
+      "0.05": {
+        "inside_flagged": 0.004991680532445923,
+        "outside_flagged": 0.001340401718395003,
+        "heldout_min": 0.014632870033566898,
+        "heldout_max": 0.10328521652563465,
+        "heldout_pairs": 4
+      },
+      "0.1": {
+        "inside_flagged": 0.05698835274542429,
+        "outside_flagged": 0.011326394520437775,
+        "heldout_min": 0.037012928998991716,
+        "heldout_max": 0.18734923612972393,
+        "heldout_pairs": 4
+      }
+    },
+    "B2": {
+      "0.01": {
+        "inside_flagged": 0.0,
+        "outside_flagged": 0.0,
+        "heldout_min": 0.0028397850697502265,
+        "heldout_max": 0.03313295299358017,
+        "heldout_pairs": 2
+      },
+      "0.02": {
+        "inside_flagged": 0.0016638935108153079,
+        "outside_flagged": 0.00016755021479937537,
+        "heldout_min": 0.005775293231739225,
+        "heldout_max": 0.05753595997498437,
+        "heldout_pairs": 2
+      },
+      "0.05": {
+        "inside_flagged": 0.01788685524126456,
+        "outside_flagged": 0.0037799328458739084,
+        "heldout_min": 0.016375030312312543,
+        "heldout_max": 0.11415297826447653,
+        "heldout_pairs": 2
+      },
+      "0.1": {
+        "inside_flagged": 0.0819467554076539,
+        "outside_flagged": 0.03416683980188863,
+        "heldout_min": 0.041588492808005,
+        "heldout_max": 0.1797232964480351,
+        "heldout_pairs": 2
+      }
+    },
+    "B3": {
+      "0.01": {
+        "inside_flagged": 0.032029950083194675,
+        "outside_flagged": 0.0,
+        "heldout_min": 0.006981404193947748,
+        "heldout_max": 0.011946241911398706,
+        "heldout_pairs": 4
+      },
+      "0.02": {
+        "inside_flagged": 0.13227953410981697,
+        "outside_flagged": 0.00010723213747160024,
+        "heldout_min": 0.016515424180929408,
+        "heldout_max": 0.023777616112110884,
+        "heldout_pairs": 4
+      },
+      "0.05": {
+        "inside_flagged": 0.31863560732113144,
+        "outside_flagged": 0.0028014395914455563,
+        "heldout_min": 0.0470829983025105,
+        "heldout_max": 0.05292210692907557,
+        "heldout_pairs": 4
+      },
+      "0.1": {
+        "inside_flagged": 0.47587354409317806,
+        "outside_flagged": 0.021654189760671273,
+        "heldout_min": 0.09620170769996554,
+        "heldout_max": 0.10526987530471851,
+        "heldout_pairs": 4
+      }
+    },
+    "M": {
+      "0.01": {
+        "inside_flagged": 0.4226289517470882,
+        "outside_flagged": 0.0,
+        "heldout_min": 0.00849382905132034,
+        "heldout_max": 0.012839657438960575,
+        "heldout_pairs": 4
+      },
+      "0.02": {
+        "inside_flagged": 0.49916805324459235,
+        "outside_flagged": 0.00030159038663887566,
+        "heldout_min": 0.01795127056451098,
+        "heldout_max": 0.02367551148038953,
+        "heldout_pairs": 4
+      },
+      "0.05": {
+        "inside_flagged": 0.6123128119800333,
+        "outside_flagged": 0.0030561159179406066,
+        "heldout_min": 0.047497798368878505,
+        "heldout_max": 0.0532475654426874,
+        "heldout_pairs": 4
+      },
+      "0.1": {
+        "inside_flagged": 0.7046589018302829,
+        "outside_flagged": 0.018785730083305967,
+        "heldout_min": 0.09821189263697974,
+        "heldout_max": 0.10135161006241146,
+        "heldout_pairs": 4
+      }
+    }
+  }
+}

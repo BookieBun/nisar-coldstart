@@ -1,0 +1,129 @@
+{
+  "site": "mccully",
+  "event_pair": "20260818_20260923",
+  "n_inside": 4292,
+  "n_outside": 490753,
+  "negative_buffer_km": 2.0,
+  "detectors": {
+    "B1": {
+      "0.01": {
+        "inside_flagged": 0.001863932898415657,
+        "outside_flagged": 0.005350960666567499,
+        "heldout_min": 0.0037642584057304743,
+        "heldout_max": 0.03275258448952648,
+        "heldout_pairs": 7
+      },
+      "0.02": {
+        "inside_flagged": 0.0025629077353215286,
+        "outside_flagged": 0.008319867631985948,
+        "heldout_min": 0.00505110039725107,
+        "heldout_max": 0.06596293109206716,
+        "heldout_pairs": 7
+      },
+      "0.05": {
+        "inside_flagged": 0.04543336439888164,
+        "outside_flagged": 0.021562782092009625,
+        "heldout_min": 0.00979964557817516,
+        "heldout_max": 0.14570587703684493,
+        "heldout_pairs": 7
+      },
+      "0.1": {
+        "inside_flagged": 0.1724137931034483,
+        "outside_flagged": 0.06085138552387861,
+        "heldout_min": 0.027503055021827198,
+        "heldout_max": 0.25570237997005885,
+        "heldout_pairs": 7
+      }
+    },
+    "B2": {
+      "0.01": {
+        "inside_flagged": 0.002096924510717614,
+        "outside_flagged": 0.0027488369913174246,
+        "heldout_min": 0.0016503011799653437,
+        "heldout_max": 0.10249745578568088,
+        "heldout_pairs": 5
+      },
+      "0.02": {
+        "inside_flagged": 0.0130475302889096,
+        "outside_flagged": 0.004804861101205698,
+        "heldout_min": 0.0026935272830148644,
+        "heldout_max": 0.1557687849461098,
+        "heldout_pairs": 5
+      },
+      "0.05": {
+        "inside_flagged": 0.13187325256290774,
+        "outside_flagged": 0.020185307068932845,
+        "heldout_min": 0.0068173155886663605,
+        "heldout_max": 0.24796561086684035,
+        "heldout_pairs": 5
+      },
+      "0.1": {
+        "inside_flagged": 0.331547064305685,
+        "outside_flagged": 0.06595171094216438,
+        "heldout_min": 0.01657373899308052,
+        "heldout_max": 0.3431644132196983,
+        "heldout_pairs": 5
+      }
+    },
+    "B3": {
+      "0.01": {
+        "inside_flagged": 0.07292637465051258,
+        "outside_flagged": 0.005283717063369964,
+        "heldout_min": 0.004801590575994405,
+        "heldout_max": 0.02275058055237938,
+        "heldout_pairs": 7
+      },
+      "0.02": {
+        "inside_flagged": 0.15493942218080148,
+        "outside_flagged": 0.010005033081815088,
+        "heldout_min": 0.01351675252162091,
+        "heldout_max": 0.031169081214464496,
+        "heldout_pairs": 7
+      },
+      "0.05": {
+        "inside_flagged": 0.28564771668219946,
+        "outside_flagged": 0.02642266068674058,
+        "heldout_min": 0.04140094853024963,
+        "heldout_max": 0.06083913885712714,
+        "heldout_pairs": 7
+      },
+      "0.1": {
+        "inside_flagged": 0.4177539608574091,
+        "outside_flagged": 0.06321510006051924,
+        "heldout_min": 0.09460744443003705,
+        "heldout_max": 0.10353478795594481,
+        "heldout_pairs": 7
+      }
+    },
+    "M": {
+      "0.01": {
+        "inside_flagged": 0.13443616029822927,
+        "outside_flagged": 0.005727932381462773,
+        "heldout_min": 0.005361514190625504,
+        "heldout_max": 0.01995882105627134,
+        "heldout_pairs": 7
+      },
+      "0.02": {
+        "inside_flagged": 0.24301025163094128,
+        "outside_flagged": 0.010661167634227402,
+        "heldout_min": 0.014005948942824923,
+        "heldout_max": 0.03488815280217211,
+        "heldout_pairs": 7
+      },
+      "0.05": {
+        "inside_flagged": 0.3825722273998136,
+        "outside_flagged": 0.026239269041656393,
+        "heldout_min": 0.04378602666415192,
+        "heldout_max": 0.06974290665189255,
+        "heldout_pairs": 7
+      },
+      "0.1": {
+        "inside_flagged": 0.49906803355079216,
+        "outside_flagged": 0.05886464270213325,
+        "heldout_min": 0.09518897913154865,
+        "heldout_max": 0.1090750847743999,
+        "heldout_pairs": 7
+      }
+    }
+  }
+}

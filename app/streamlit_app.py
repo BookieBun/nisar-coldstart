@@ -60,8 +60,31 @@ def load(site: str) -> dict:
            "metrics": json.loads((d / "metrics.json").read_text()),
            "calib": json.loads((d / "calibration.json").read_text()),
            "curves": pd.read_csv(d / "curves.csv"),
-           "failure": pd.read_csv(d / "failure_table.csv") if (d / "failure_table.csv").exists() else None}
+           "failure": pd.read_csv(d / "failure_table.csv") if (d / "failure_table.csv").exists() else None,
+           "summary": json.loads((d / "flag_summary.json").read_text()) if (d / "flag_summary.json").exists() else None,
+           "compare_png": (d / "figures" / "compare_methods.png") if (d / "figures" / "compare_methods.png").exists() else None}
     return out
+
+
+def pct(v: float) -> str:
+    """Shares under 10% keep one decimal so 0.045 reads 4.5%, not 5%."""
+    return f"{v:.0%}" if v >= 0.1 else f"{v:.1%}"
+
+
+def setting_meaning(D: dict, det: str, alpha: float) -> None:
+    """What the chosen setting did, from stored outputs (scripts/flag_summary.py)."""
+    x = (D["summary"] or {}).get("detectors", {}).get(det, {}).get(str(alpha))
+    if not x:
+        return
+    st.markdown("**What this setting did**")
+    if x["heldout_pairs"]:
+        st.markdown(f"On {x['heldout_pairs']} pairs of dates with no fire, held out from calibration: "
+                    f"{x['heldout_min']:.1%} to {x['heldout_max']:.1%} of the land flagged, against a "
+                    f"target of {alpha:.0%}.")
+    st.markdown(f"On the fire dates, as mapped: **{pct(x['inside_flagged'])}** of the cells inside the fire "
+                f"perimeter and **{pct(x['outside_flagged'])}** of the land more than 2 km outside it.")
+    st.caption("Held-out shares are before small-patch removal, as tested. Inside and outside refer to the "
+               "agency-mapped perimeter, not verified ground truth. Switch methods to compare.")
 
 
 @st.cache_data(show_spinner=False)
@@ -245,6 +268,12 @@ def view_validation(D: dict) -> None:
     h = met["hypotheses"]
     st.markdown("Two tests were written down, with all settings, before the fire dates were scored. "
                 "This page shows how they came out, and every number behind them.")
+    if D.get("compare_png") is not None:
+        st.markdown("#### Same false-alarm setting, two methods")
+        st.image(str(D["compare_png"]), width="stretch")
+        st.caption("Both methods are set to the same calibrated false-alarm level on the same two radar dates. "
+                   "The standard method flags little inside the fire; ours flags much more of it, and also flags "
+                   "some land outside, such as the streaks along valleys. Some of those may be real changes.")
     c1, c2 = st.columns(2)
     for col, key, name, text in (
             (c1, "H1", "Test 1", "With every method set to flag half of the cells inside the fire perimeter, ours flags the least land outside it."),
@@ -371,6 +400,7 @@ def main() -> None:
                                       "Technically this is the target false-alarm rate (alpha): the threshold is "
                                       "set on pairs of dates with no fire so that about this share of unchanged "
                                       "cells scores above it.")
+        setting_meaning(D, det, alpha)
         thr = meta["thresholds"].get(det, {}).get(str(alpha))
         st.caption(f"Score threshold at this setting: {thr:.3f} (calibrated for {det}, alpha = {alpha})."
                    if thr is not None else "No finite threshold at this setting.")
