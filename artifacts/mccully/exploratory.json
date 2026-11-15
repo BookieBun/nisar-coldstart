@@ -1,0 +1,403 @@
+{
+  "site": "mccully",
+  "event_pair": "20260818_20260923",
+  "note": "exploratory; run after the frozen test",
+  "reproducibility": {
+    "m_score_identical_to_stored": true,
+    "max_abs_diff": 0.0
+  },
+  "ablations": {
+    "M": {
+      "ap": 0.06606,
+      "far_at_recall50": 0.08457,
+      "recall_at_far1": 0.1829
+    },
+    "M, HV only": {
+      "ap": 0.04701,
+      "far_at_recall50": 0.14718,
+      "recall_at_far1": 0.14189,
+      "far_at_recall50_minus_M_ci95": [
+        0.02734,
+        0.07756
+      ],
+      "ap_minus_M_ci95": [
+        -0.04702,
+        -0.0005
+      ]
+    },
+    "M, HH only": {
+      "ap": 0.05837,
+      "far_at_recall50": 0.14334,
+      "recall_at_far1": 0.18523,
+      "far_at_recall50_minus_M_ci95": [
+        0.03179,
+        0.1224
+      ],
+      "ap_minus_M_ci95": [
+        -0.02222,
+        0.0051
+      ]
+    },
+    "M, no land class": {
+      "ap": 0.05936,
+      "far_at_recall50": 0.09214,
+      "recall_at_far1": 0.17102,
+      "far_at_recall50_minus_M_ci95": [
+        0.00354,
+        0.01546
+      ],
+      "ap_minus_M_ci95": [
+        -0.01445,
+        -0.00117
+      ]
+    },
+    "M, no texture": {
+      "ap": 0.06483,
+      "far_at_recall50": 0.08275,
+      "recall_at_far1": 0.18267,
+      "far_at_recall50_minus_M_ci95": [
+        -0.00955,
+        0.00326
+      ],
+      "ap_minus_M_ci95": [
+        -0.00493,
+        0.00124
+      ]
+    },
+    "M, no cross-fitting": {
+      "ap": 0.08211,
+      "far_at_recall50": 0.07594,
+      "recall_at_far1": 0.22274,
+      "far_at_recall50_minus_M_ci95": [
+        -0.01551,
+        -0.00453
+      ],
+      "ap_minus_M_ci95": [
+        0.0029,
+        0.03071
+      ]
+    },
+    "M, trained on no-event pair 20260725_20260818": {
+      "ap": 0.03448,
+      "far_at_recall50": 0.17352,
+      "recall_at_far1": 0.10252,
+      "far_at_recall50_minus_M_ci95": [
+        0.06004,
+        0.13065
+      ],
+      "ap_minus_M_ci95": [
+        -0.06646,
+        -0.00548
+      ]
+    },
+    "M, 5 km tiles": {
+      "ap": 0.0738,
+      "far_at_recall50": 0.07642,
+      "recall_at_far1": 0.20806,
+      "far_at_recall50_minus_M_ci95": [
+        -0.01326,
+        -0.00231
+      ],
+      "ap_minus_M_ci95": [
+        0.00105,
+        0.01752
+      ]
+    },
+    "M, 20 km tiles": {
+      "ap": 0.0522,
+      "far_at_recall50": 0.10135,
+      "recall_at_far1": 0.14911,
+      "far_at_recall50_minus_M_ci95": [
+        0.00798,
+        0.03158
+      ],
+      "ap_minus_M_ci95": [
+        -0.02894,
+        -0.00205
+      ]
+    },
+    "M, 3 folds": {
+      "ap": 0.07238,
+      "far_at_recall50": 0.08046,
+      "recall_at_far1": 0.20433,
+      "far_at_recall50_minus_M_ci95": [
+        -0.01319,
+        0.01716
+      ],
+      "ap_minus_M_ci95": [
+        -0.00143,
+        0.01891
+      ]
+    },
+    "B3": {
+      "ap": 0.04359,
+      "far_at_recall50": 0.12847,
+      "recall_at_far1": 0.13211,
+      "far_at_recall50_minus_M_ci95": [
+        0.03176,
+        0.06704
+      ],
+      "ap_minus_M_ci95": [
+        -0.04797,
+        -0.00371
+      ]
+    }
+  },
+  "robustness": {
+    "unperturbed": {
+      "B1": {
+        "ap": 0.01708,
+        "far_at_recall50": 0.23575,
+        "recall_at_far1": 0.00932
+      },
+      "B2": {
+        "ap": 0.0278,
+        "far_at_recall50": 0.14994,
+        "recall_at_far1": 0.04986
+      },
+      "B3": {
+        "ap": 0.04359,
+        "far_at_recall50": 0.12847,
+        "recall_at_far1": 0.13211
+      },
+      "M": {
+        "ap": 0.06606,
+        "far_at_recall50": 0.08457,
+        "recall_at_far1": 0.1829
+      }
+    },
+    "noise 0.5 dB on every date": {
+      "B1": {
+        "ap": 0.01242,
+        "far_at_recall50": 0.36528,
+        "recall_at_far1": 0.01165
+      },
+      "B2": {
+        "ap": 0.01688,
+        "far_at_recall50": 0.29564,
+        "recall_at_far1": 0.03821
+      },
+      "B3": {
+        "ap": 0.01644,
+        "far_at_recall50": 0.3165,
+        "recall_at_far1": 0.0438
+      },
+      "M": {
+        "ap": 0.0229,
+        "far_at_recall50": 0.25444,
+        "recall_at_far1": 0.07176
+      }
+    },
+    "noise 1.0 dB on every date": {
+      "B1": {
+        "ap": 0.01002,
+        "far_at_recall50": 0.4403,
+        "recall_at_far1": 0.01468
+      },
+      "B2": {
+        "ap": 0.01124,
+        "far_at_recall50": 0.41513,
+        "recall_at_far1": 0.01934
+      },
+      "B3": {
+        "ap": 0.01081,
+        "far_at_recall50": 0.42437,
+        "recall_at_far1": 0.0219
+      },
+      "M": {
+        "ap": 0.01359,
+        "far_at_recall50": 0.37261,
+        "recall_at_far1": 0.03239
+      }
+    },
+    "20% of cells missing at random": {
+      "B1": {
+        "ap": 0.01719,
+        "far_at_recall50": 0.23083,
+        "recall_at_far1": 0.00992
+      },
+      "B2": {
+        "ap": 0.02804,
+        "far_at_recall50": 0.14872,
+        "recall_at_far1": 0.05045
+      },
+      "B3": {
+        "ap": 0.04385,
+        "far_at_recall50": 0.12818,
+        "recall_at_far1": 0.1324
+      },
+      "M": {
+        "ap": 0.06601,
+        "far_at_recall50": 0.08012,
+        "recall_at_far1": 0.19043
+      }
+    }
+  },
+  "false_alarms": {
+    "alpha": 0.05,
+    "flagged_control_cells": 12877,
+    "patches": 939,
+    "share_in_20_largest": 0.324,
+    "largest": [
+      {
+        "rank": 1,
+        "cells": 830,
+        "area_km2": 8.3,
+        "lat": 44.9859,
+        "lon": -118.5573,
+        "dominant_class": 5,
+        "mean_hv_before_db": -10.31,
+        "mean_d_hv_db": -1.39,
+        "mean_d_hh_db": -0.25,
+        "km_from_fire": 13.2
+      },
+      {
+        "rank": 2,
+        "cells": 587,
+        "area_km2": 5.87,
+        "lat": 44.9264,
+        "lon": -117.857,
+        "dominant_class": 0,
+        "mean_hv_before_db": -19.28,
+        "mean_d_hv_db": -3.47,
+        "mean_d_hh_db": -4.15,
+        "km_from_fire": 26.4
+      },
+      {
+        "rank": 3,
+        "cells": 452,
+        "area_km2": 4.52,
+        "lat": 45.1582,
+        "lon": -117.8443,
+        "dominant_class": 1,
+        "mean_hv_before_db": -19.99,
+        "mean_d_hv_db": 1.25,
+        "mean_d_hh_db": 1.66,
+        "km_from_fire": 41.0
+      },
+      {
+        "rank": 4,
+        "cells": 347,
+        "area_km2": 3.47,
+        "lat": 44.9592,
+        "lon": -118.4544,
+        "dominant_class": 4,
+        "mean_hv_before_db": -11.88,
+        "mean_d_hv_db": -1.79,
+        "mean_d_hh_db": 0.08,
+        "km_from_fire": 7.9
+      },
+      {
+        "rank": 5,
+        "cells": 195,
+        "area_km2": 1.95,
+        "lat": 44.9441,
+        "lon": -118.4221,
+        "dominant_class": 4,
+        "mean_hv_before_db": -10.85,
+        "mean_d_hv_db": -1.65,
+        "mean_d_hh_db": -0.12,
+        "km_from_fire": 5.6
+      },
+      {
+        "rank": 6,
+        "cells": 172,
+        "area_km2": 1.72,
+        "lat": 45.1028,
+        "lon": -118.4812,
+        "dominant_class": 4,
+        "mean_hv_before_db": -11.99,
+        "mean_d_hv_db": -1.78,
+        "mean_d_hh_db": -0.13,
+        "km_from_fire": 22.4
+      },
+      {
+        "rank": 7,
+        "cells": 169,
+        "area_km2": 1.69,
+        "lat": 44.739,
+        "lon": -118.718,
+        "dominant_class": 2,
+        "mean_hv_before_db": -16.86,
+        "mean_d_hv_db": 0.53,
+        "mean_d_hh_db": 1.8,
+        "km_from_fire": 32.6
+      },
+      {
+        "rank": 8,
+        "cells": 153,
+        "area_km2": 1.53,
+        "lat": 44.9469,
+        "lon": -117.8973,
+        "dominant_class": 3,
+        "mean_hv_before_db": -16.29,
+        "mean_d_hv_db": -6.06,
+        "mean_d_hh_db": -5.7,
+        "km_from_fire": 24.4
+      }
+    ]
+  },
+  "other_perimeters": {
+    "alpha": 0.05,
+    "rows": [
+      {
+        "fire": "Anthony",
+        "discovered": "2026-07-08",
+        "cells": 1063,
+        "flagged_M": 0.404,
+        "flagged_B3": 0.334,
+        "flagged_B1": 0.102
+      },
+      {
+        "fire": "Greenhorn",
+        "discovered": "2026-07-08",
+        "cells": 45,
+        "flagged_M": 0.0,
+        "flagged_B3": 0.0,
+        "flagged_B1": 0.0
+      },
+      {
+        "fire": "Salmon",
+        "discovered": "2026-07-08",
+        "cells": 571,
+        "flagged_M": 0.075,
+        "flagged_B3": 0.17,
+        "flagged_B1": 0.011
+      },
+      {
+        "fire": "North Pole",
+        "discovered": "2026-08-22",
+        "cells": 168,
+        "flagged_M": 0.238,
+        "flagged_B3": 0.006,
+        "flagged_B1": 0.0
+      },
+      {
+        "fire": "GALENA RX",
+        "discovered": "2026-04-03",
+        "cells": 215,
+        "flagged_M": 0.0,
+        "flagged_B3": 0.0,
+        "flagged_B1": 0.0
+      },
+      {
+        "fire": "Olive Butte",
+        "discovered": "2026-07-08",
+        "cells": 1166,
+        "flagged_M": 0.307,
+        "flagged_B3": 0.308,
+        "flagged_B1": 0.081
+      }
+    ],
+    "control_flag_rate": {
+      "M": 0.0262,
+      "B3": 0.0264,
+      "B1": 0.0216
+    },
+    "burn_flag_rate": {
+      "M": 0.3826,
+      "B3": 0.2856,
+      "B1": 0.0454
+    }
+  }
+}

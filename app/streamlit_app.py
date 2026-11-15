@@ -151,8 +151,9 @@ def view_inspector(D: dict, click) -> None:
     st.pyplot(fig, clear_figure=True)
     lab = {1: "inside perimeter", 0: "control land", -1: "excluded"}.get(int(arr["labels"][r, c]), "?")
     scores = {d: float(arr[f"score_{d}"][r, c]) for d in meta["detectors"]}
-    st.markdown(f"**Cell** row {r}, col {c} at {click[0]:.4f}, {click[1]:.4f}: *{lab}*, land class "
-                f"{int(arr['cls'][r, c])}")
+    k = int(arr["cls"][r, c])
+    st.markdown(f"**Cell** row {r}, col {c} at {click[0]:.4f}, {click[1]:.4f}: *{lab}*, "
+                + (f"land class {k}" if k >= 0 else "masked (water, steep terrain or missing data; not scored)"))
     st.dataframe(pd.DataFrame({"detector": list(scores), "score": [f"{v:.2f}" if np.isfinite(v) else "not scored"
                                                                       for v in scores.values()]}),
                  hide_index=True, width="stretch")
