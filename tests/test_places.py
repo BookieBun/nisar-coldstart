@@ -52,3 +52,16 @@ def test_other_fire_column_empty_without_ids():
     flags[2:4, 2:4] = True
     df = flagged_places(flags, np.zeros((10, 10), int), np.ones((10, 10)), BOUNDS, [10, 10])
     assert df["other_fire"].tolist() == [""]
+
+
+def test_peak_is_the_highest_scoring_cell_of_each_patch():
+    flags = np.zeros((40, 40), bool)
+    flags[0:10, 0:10] = True
+    score = np.ones((40, 40))
+    score[3, 7] = 5.0                   # strongest cell of the patch
+    score[30, 30] = 9.0                 # higher, but not flagged: must be ignored
+    score[0, 0] = np.nan                # non-finite cells never win
+    df = flagged_places(flags, np.zeros((40, 40), int), score, BOUNDS, [40, 40])
+    r = df.iloc[0]
+    assert np.isclose(r["peak_lat"], 45.0 - (3 + 0.5) / 40)
+    assert np.isclose(r["peak_lon"], -120.0 + (7 + 0.5) / 40)

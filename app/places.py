@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from scipy.ndimage import label
+from scipy.ndimage import label, maximum_position
 
-COLUMNS = ["area_km2", "lat", "lon", "cells", "mean_score", "overlaps_perimeter", "other_fire"]
+COLUMNS = ["area_km2", "lat", "lon", "cells", "mean_score", "overlaps_perimeter", "other_fire", "peak_lat", "peak_lon"]
 
 
 def flagged_places(flags: np.ndarray, labels: np.ndarray, score: np.ndarray,
@@ -21,6 +21,8 @@ def flagged_places(flags: np.ndarray, labels: np.ndarray, score: np.ndarray,
     bounds: [[south, west], [north, east]] of the display grid; shape: [h, w].
     other_ids: optional uint8 (h, w), k > 0 where another mapped fire lies (scripts/other_fires.py);
     other_names: {k: fire name}. A patch's other_fire lists the fires it touches ("" if none).
+    peak_lat, peak_lon: centre of the patch's highest-scoring cell (a cell that is surely in the patch,
+    unlike the centroid of a curved patch).
     """
     comp, n = label(np.asarray(flags, dtype=bool), structure=np.ones((3, 3), dtype=bool))
     if n == 0:
@@ -48,6 +50,11 @@ def flagged_places(flags: np.ndarray, labels: np.ndarray, score: np.ndarray,
             found.setdefault(p, set()).add(names.get(k, f"fire {k}"))
         for p, v in found.items():
             other[p - 1] = "; ".join(sorted(v))
+    ranked = np.where(np.isfinite(score), score, -np.inf).astype(float)
+    peak = np.array(maximum_position(ranked, comp, index=np.arange(1, n + 1)), dtype=float).reshape(n, 2)
+    peak_lat = nn - (peak[:, 0] + 0.5) / h * (nn - s)
+    peak_lon = w + (peak[:, 1] + 0.5) / wd * (e - w)
     df = pd.DataFrame({"area_km2": cells * cell_km2, "lat": lat, "lon": lon, "cells": cells.astype(int),
-                       "mean_score": mean_score, "overlaps_perimeter": inside, "other_fire": other})
+                       "mean_score": mean_score, "overlaps_perimeter": inside, "other_fire": other,
+                       "peak_lat": peak_lat, "peak_lon": peak_lon})
     return df.sort_values(["area_km2", "mean_score"], ascending=[False, False]).reset_index(drop=True)

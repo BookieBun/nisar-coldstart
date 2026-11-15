@@ -8,6 +8,7 @@ term for each plain-language label is kept in a tooltip or caption beside it.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import sys
@@ -32,6 +33,8 @@ import places  # noqa: E402
 # updated places.py is never paired with a newer caller.
 importlib.reload(places)
 flagged_places = places.flagged_places
+# Cached tables are keyed on this, so an updated places.py never returns a table built by the old one.
+PLACES_VERSION = hashlib.sha1(Path(places.__file__).read_bytes()).hexdigest()[:12]
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
@@ -240,9 +243,51 @@ def keep_in_mind(D: dict) -> None:
         st.markdown("\n".join(lines))
 
 
+PLACES_TOP = 15
+ALL_PLACES = "All flagged places"
+
+
+def places_away(site: str) -> bool:
+    """True when the places list is filtered to places away from mapped fires."""
+    return (load(site)["other"] is not None
+            and st.session_state.get(f"places_filter_{site}", ALL_PLACES) != ALL_PLACES)
+
+
+def places_view(site: str, det: str, alpha: float, away: bool) -> pd.DataFrame:
+    """The rows the places table shows; the index + 1 is each place's rank among all flagged places."""
+    df = places_table(site, det, alpha, PLACES_VERSION)
+    if away and not df.empty:
+        df = df[~(df["overlaps_perimeter"] | (df["other_fire"] != ""))]
+    return df.head(PLACES_TOP)
+
+
+def places_key(site: str, det: str, alpha: float, away: bool) -> str:
+    # A new key (other setting, filter, or "Back to the fire") starts the table with nothing selected.
+    return f"places_{site}_{det}_{alpha}_{int(away)}_{st.session_state.get('places_nonce', 0)}"
+
+
+def focused_place(site: str, det: str, alpha: float) -> dict | None:
+    """The place selected in the table, if any (read before the map is drawn so the map can move to it)."""
+    away = places_away(site)
+    state = st.session_state.get(places_key(site, det, alpha, away))
+    try:
+        rows = list(state["selection"]["rows"]) if state is not None else []
+    except (KeyError, TypeError):
+        rows = []
+    view = places_view(site, det, alpha, away)
+    if not rows or rows[0] >= len(view):
+        return None
+    return {**view.iloc[rows[0]].to_dict(), "rank": int(view.index[rows[0]]) + 1}
+
+
+def _back_to_fire() -> None:
+    st.session_state["places_nonce"] = st.session_state.get("places_nonce", 0) + 1
+
+
 def view_map(site: str, D: dict, det: str, alpha: float) -> None:
     meta, arr = D["meta"], D["arr"]
     bit = meta["alphas"].index(alpha)
+    focus = focused_place(site, det, alpha)
     (s, w), (n, e) = meta["bounds"]
     m = folium.Map(location=[(s + n) / 2, (w + e) / 2], zoom_start=10, tiles="OpenStreetMap", control_scale=True)
     folium.TileLayer("Esri.WorldImagery", name="Satellite imagery").add_to(m)
@@ -264,7 +309,20 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
     # Open the view on the fire (cells inside the reference perimeter), centred left-right and placed in the upper
     # part of the map, so it shows on the first screen of a laptop or phone where only the map's top is visible.
     inside = arr["labels"] == 1
-    if inside.any():
+    if focus:
+        # Zoom to the selected place, mark its strongest cell and show that cell's history once.
+        plat, plon = focus["peak_lat"], focus["peak_lon"]
+        r_km = max(2.0, 3 * float(np.sqrt(focus["area_km2"])))
+        dlat, dlon = r_km / 111.32, r_km / (111.32 * np.cos(np.radians(plat)))
+        m.fit_bounds([[plat - dlat, plon - dlon], [plat + dlat, plon + dlon]])
+        folium.CircleMarker([plat, plon], radius=14, color="#00e5ff", weight=3, fill=False,
+                            tooltip=f"Place {focus['rank']}").add_to(m)
+        fkey = f"{plat:.5f},{plon:.5f}"
+        if st.session_state.get("focus_seen") != fkey:
+            st.session_state["focus_seen"] = fkey
+            st.session_state["click"] = (plat, plon)
+    elif inside.any():
+        st.session_state["focus_seen"] = None
         rr, cc = np.nonzero(inside)
         h, wd = meta["shape"]
         fire = [[n - (rr.max() + 1) / h * (n - s), w + cc.min() / wd * (e - w)],
@@ -274,15 +332,27 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
                 + ("**Yellow outline** = other fires mapped by agencies in 2026. " if other is not None else "")
                 + "**Grey** = the radar image. A red cell is a detected change, not confirmed fire damage; the full "
                 "guide is below the map.")
+    if focus:
+        note, back = st.columns([4, 1])
+        note.info(f"Showing place {focus['rank']} from the list below (cyan circle). Its radar history is on the "
+                  "right.")
+        back.button("Back to the fire", on_click=_back_to_fire, key=f"back_{site}")
+    map_key = f"map_{site}" + (f"_{focus['peak_lat']:.5f}_{focus['peak_lon']:.5f}" if focus else "")
     left, right = st.columns([3, 2])
     with left:
-        out = st_folium(m, height=620, use_container_width=True, returned_objects=["last_clicked"], key=f"map_{site}")
+        out = st_folium(m, height=620, use_container_width=True, returned_objects=["last_clicked"], key=map_key)
         st.caption(f"Showing: {DET_NAMES[det]}, at the {odds(alpha)} setting. Switch layers with the box at the "
                    "top right of the map. Click any place to inspect it.")
     with right:
         click = (out or {}).get("last_clicked")
         if click:
-            st.session_state["click"] = (click["lat"], click["lng"])
+            # Each map instance reports its last click on every rerun; act only on a new one, so a selected
+            # place is not overwritten by an older click.
+            pt = (click["lat"], click["lng"])
+            seen = st.session_state.setdefault("seen_clicks", {})
+            if seen.get(map_key) != pt:
+                seen[map_key] = pt
+                st.session_state["click"] = pt
         view_inspector(D, st.session_state.get("click"))
     view_places(site, det, alpha)
     how_to_read(det, alpha)
@@ -290,7 +360,7 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
 
 
 @st.cache_data(show_spinner=False)
-def places_table(site: str, det: str, alpha: float) -> pd.DataFrame:
+def places_table(site: str, det: str, alpha: float, places_version: str = "") -> pd.DataFrame:
     D = load(site)
     arr, meta = D["arr"], D["meta"]
     bit = meta["alphas"].index(alpha)
@@ -302,7 +372,7 @@ def places_table(site: str, det: str, alpha: float) -> pd.DataFrame:
 
 
 def view_places(site: str, det: str, alpha: float) -> None:
-    df = places_table(site, det, alpha)
+    df = places_table(site, det, alpha, PLACES_VERSION)
     st.markdown("#### Places to check first")
     if df.empty:
         st.info("Nothing is flagged at this setting.")
@@ -310,24 +380,23 @@ def view_places(site: str, det: str, alpha: float) -> None:
     st.caption(f"{len(df):,} separate patches are flagged by {DET_SHORT[det]} at the {odds(alpha)} setting. "
                "The largest are listed first. Each is a place to look at with other imagery or on the ground, "
                "not confirmed damage. Areas and positions are approximate (display grid).")
-    view = df
     if load(site)["other"] is not None:
         known = df["overlaps_perimeter"] | (df["other_fire"] != "")
         top = min(15, len(df))
         st.caption(f"{int(known.head(top).sum())} of the {top} largest touch a fire mapped by agencies in 2026: this "
                    "one or another (yellow outline on the map). Those match a known event; the rest are unexplained "
                    "change, or false alarms.")
-        choice = st.radio("Show", ["All flagged places", "Only places away from mapped fires"], horizontal=True,
+        st.radio("Show", [ALL_PLACES, "Only places away from mapped fires"], horizontal=True,
                           key=f"places_filter_{site}",
                           help="Mapped fires: this fire's perimeter and the other 2026 perimeters in the window "
                                "(NIFC). A flagged place away from them is either a change nobody has recorded or "
                                "a false alarm; those are the ones to check with other imagery.")
-        if choice != "All flagged places":
-            view = df[~known]
+    away = places_away(site)
+    view = places_view(site, det, alpha, away)
     if view.empty:
         st.info("No flagged place matches this filter.")
     else:
-        show = view.head(15).copy()
+        show = view.copy()
         show.insert(0, "Rank", show.index + 1)
         show["overlaps_perimeter"] = show["overlaps_perimeter"].map({True: "yes", False: "no"})
         show["other_fire"] = show["other_fire"].replace("", "no")
@@ -339,7 +408,9 @@ def view_places(site: str, det: str, alpha: float) -> None:
         if load(site)["other"] is None:
             show = show.drop(columns=["Touches another mapped fire"])
         st.dataframe(show.round({"Area (km², approx.)": 2, "Latitude": 4, "Longitude": 4, "Mean change score": 2}),
-                     hide_index=True, width="stretch")
+                     hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
+                     key=places_key(site, det, alpha, away))
+        st.caption("Select a row (the box at its left) to move the map to that place and show its radar history.")
     st.download_button(f"Download all {len(df):,} patches (CSV)", df.round(5).to_csv(index=False),
                        file_name=f"{site}_{det}_1in{round(1 / alpha)}_flagged_places.csv", mime="text/csv")
 

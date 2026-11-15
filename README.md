@@ -32,7 +32,7 @@ python -m coldstart run config/site.yaml
 The replication runs the same way with `config/site_austin.yaml`. `python scripts/flag_summary.py`, `python scripts/compare_figure.py` and `python scripts/other_fires.py` (same argument) rebuild the app's
 per-setting summary, side-by-side figure and other-fire cross-check from stored outputs.
 
-`pip install -e ".[test]"` then `pytest` runs the test suite (44 tests, about a minute and a half, offline).
+`pip install -e ".[test]"` then `pytest` runs the test suite (45 tests, about a minute and a half, offline).
 `python scripts/exploratory.py config/site.yaml` reruns the ablations and robustness checks.
 
 ## Results: McCully Fire
@@ -215,7 +215,8 @@ event such as a fire:
 3. Click a place to see its radar signal on every date beside the range the model expected.
 4. Use the "Places to check first" list to decide where to look first. It marks the places that
    touch a fire agencies have already mapped, and can hide them, so unexplained change comes up
-   first. Check each place against other imagery or on the ground. A flag is a detected change,
+   first. Selecting a place moves the map to it and shows its radar history. Check each place
+   against other imagery or on the ground. A flag is a detected change,
    not confirmed damage.
 
 Before anyone relied on it, it would need testing on more events and sites, comparison with
