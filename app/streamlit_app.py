@@ -9,6 +9,7 @@ term for each plain-language label is kept in a tooltip or caption beside it.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import folium
@@ -22,6 +23,9 @@ import streamlit as st
 from matplotlib import colormaps
 from scipy.ndimage import binary_erosion
 from streamlit_folium import st_folium
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # app/places.py, under any launcher
+from places import flagged_places  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
@@ -207,8 +211,39 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         if click:
             st.session_state["click"] = (click["lat"], click["lng"])
         view_inspector(D, st.session_state.get("click"))
+    view_places(site, det, alpha)
     how_to_read(det, alpha)
     keep_in_mind()
+
+
+@st.cache_data(show_spinner=False)
+def places_table(site: str, det: str, alpha: float) -> pd.DataFrame:
+    D = load(site)
+    arr, meta = D["arr"], D["meta"]
+    bit = meta["alphas"].index(alpha)
+    flags = ((arr[f"flags_{det}"].astype(np.uint8) >> bit) & 1).astype(bool)
+    return flagged_places(flags, arr["labels"], arr[f"score_{det}"].astype(np.float32), meta["bounds"], meta["shape"])
+
+
+def view_places(site: str, det: str, alpha: float) -> None:
+    df = places_table(site, det, alpha)
+    st.markdown("#### Places to check first")
+    if df.empty:
+        st.info("Nothing is flagged at this setting.")
+        return
+    st.caption(f"{len(df):,} separate patches are flagged by {DET_SHORT[det]} at the {odds(alpha)} setting. "
+               "The largest are listed first. Each is a place to look at with other imagery or on the ground, "
+               "not confirmed damage. Areas and positions are approximate (display grid).")
+    show = df.head(15).copy()
+    show.insert(0, "Rank", np.arange(1, len(show) + 1))
+    show["overlaps_perimeter"] = show["overlaps_perimeter"].map({True: "yes", False: "no"})
+    show = show.rename(columns={"area_km2": "Area (km², approx.)", "lat": "Latitude", "lon": "Longitude",
+                                "cells": "Cells", "mean_score": "Mean change score",
+                                "overlaps_perimeter": "Touches the fire perimeter"})
+    st.dataframe(show.round({"Area (km², approx.)": 2, "Latitude": 4, "Longitude": 4, "Mean change score": 2}),
+                 hide_index=True, width="stretch")
+    st.download_button(f"Download all {len(df):,} patches (CSV)", df.round(5).to_csv(index=False),
+                       file_name=f"{site}_{det}_1in{round(1 / alpha)}_flagged_places.csv", mime="text/csv")
 
 
 def view_inspector(D: dict, click) -> None:
