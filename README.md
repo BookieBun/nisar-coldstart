@@ -10,6 +10,8 @@ against three baselines, with hypotheses committed before the fire was scored.
 
 **Result on the McCully Fire:** both pre-registered hypotheses pass. At 50% recall the model raises 8.5% false alarms against 12.8% for the best baseline, and its calibrated false-alarm rate held on all 14 leave-one-pair-out checks.
 
+**Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully Fire; no login needed)
+
 ## Reproduce
 
 ```bash
