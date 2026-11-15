@@ -162,7 +162,16 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
     for name, img, show, radar in layers:
         folium.raster_layers.ImageOverlay(image=to_mercator_rows(img, s, n), bounds=b, name=name,
                                           opacity=0.85 if radar else 1.0, show=show).add_to(m)
-    folium.LayerControl(collapsed=False).add_to(m)
+    folium.LayerControl(collapsed=True).add_to(m)
+    # Open the view on the fire (cells inside the reference perimeter), centred left-right and placed in the upper
+    # part of the map, so it shows on the first screen of a laptop or phone where only the map's top is visible.
+    inside = arr["labels"] == 1
+    if inside.any():
+        rr, cc = np.nonzero(inside)
+        h, wd = meta["shape"]
+        fire = [[n - (rr.max() + 1) / h * (n - s), w + cc.min() / wd * (e - w)],
+                [n - rr.min() / h * (n - s), w + (cc.max() + 1) / wd * (e - w)]]
+        m.fit_bounds(fire, padding_top_left=(20, 20), padding_bottom_right=(20, 420))
     st.markdown("**Red** = flagged as changed. **Cyan outline** = the mapped edge of the fire. **Grey** = the radar "
                 "image. A red cell is a detected change, not confirmed fire damage; the full guide is below the map.")
     left, right = st.columns([3, 2])
