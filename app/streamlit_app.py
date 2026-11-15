@@ -35,7 +35,14 @@ DET_NAMES = {"M": "Our model (whole scene)", "B3": "Baseline: land-type average"
 DET_SHORT = {"M": "our model", "B3": "land-type average", "B2": "short history", "B1": "before/after difference"}
 DET_TECH = {"M": "M, pooled conditional quantile model", "B3": "B3, stratified class shift",
             "B2": "B2, short-baseline z-score", "B1": "B1, log-ratio"}
-SITE_NAMES = {"mccully": "McCully Fire, Oregon (2026)", "synthetic": "Simulated test scene (not real data)"}
+SITE_NAMES = {"mccully": "McCully Fire, Oregon (2026)", "austin": "Austin Fire, Oregon (2026)",
+              "synthetic": "Simulated test scene (not real data)"}
+# Where each site's tests were written down before scoring.
+SITE_PREREG = {"mccully": "HYPOTHESES.md, committed before the fire was scored",
+               "austin": "HYPOTHESES_REPLICATION.md, pushed to GitHub at 20:21 UTC on 15 November 2026, before "
+                         "any radar data for this site were processed"}
+NUM_WORDS = {1: "one", 2: "two", 3: "three", 4: "four"}
+SITE_ROLE = {"mccully": "the original test", "austin": "the pre-registered replication"}
 COLORS = {"B1": "#8c8c8c", "B2": "#c08a2b", "B3": "#3b7dbf", "M": "#c23b3b"}
 
 st.set_page_config(page_title="Cold Start: change detection with NISAR", layout="wide")
@@ -73,6 +80,27 @@ def load(site: str) -> dict:
 def pct(v: float) -> str:
     """Shares under 10% keep one decimal so 0.045 reads 4.5%, not 5%."""
     return f"{v:.0%}" if v >= 0.1 else f"{v:.1%}"
+
+
+def real_sites() -> list[str]:
+    return sorted((x for x in sites() if x != "synthetic"), key=lambda x: (x != "mccully", x))
+
+
+def site_facts(D: dict) -> dict:
+    """Numbers the plain-language text quotes, read from the stored summaries for this site."""
+    meta, cal, met = D["meta"], D["calib"], D["metrics"]
+    ra = str(meta["report_alpha"])
+    summ = (D["summary"] or {}).get("detectors", {})
+    m = summ.get("M", {}).get(ra)
+    h3 = [r for r in cal["lopo"] if r.get("pass") is not None]
+    count = lambda d: (sum(bool(r["pass"]) for r in h3 if r["detector"] == d), sum(r["detector"] == d for r in h3))
+    out = {"m": m, "m_h3": count("M"), "b3_h3": count("B3"), "h3_pass": bool(met["hypotheses"]["H3"]["pass"]),
+           "all_under_half": all(v.get(ra, {}).get("inside_flagged", 1) < 0.5 for v in summ.values()) if summ else None}
+    if m and D["summary"]:
+        n_in = m["inside_flagged"] * D["summary"]["n_inside"]
+        n_out = m["outside_flagged"] * D["summary"]["n_outside"]
+        out["most_outside"] = n_out > n_in
+    return out
 
 
 def setting_meaning(D: dict, det: str, alpha: float) -> None:
@@ -157,19 +185,35 @@ def how_to_read(det: str, alpha: float) -> None:
                    f"target false-alarm rate (alpha) of {alpha}.")
 
 
-def keep_in_mind() -> None:
+def keep_in_mind(D: dict) -> None:
+    f = site_facts(D)
+    n = len(real_sites())
+    lines = ["- **One fire is one case study.** Results may differ at other places and for other kinds of change."
+             if n == 1 else
+             f"- **{NUM_WORDS.get(n, n).capitalize()} fires are still a small sample.** Results may differ at other "
+             "places and for other kinds of change."]
+    if f["m"]:
+        where = ("most red cells on the map lie outside it" if f.get("most_outside")
+                 else "most red cells on the map lie inside it")
+        lines.append(f"- **At the default setting our model flags {pct(f['m']['inside_flagged'])} of the cells inside "
+                     f"this fire's perimeter**, and {where}. Some flags outside may be real changes of another kind; "
+                     "none were checked on the ground. The Evidence tab has the numbers.")
+    lines.append("- **A flag means \"changed more than expected\", not \"burned\".**")
+    mk, mn = f["m_h3"]
+    bk, bn = f["b3_h3"]
+    held = ("stayed within half to double the setting on every check" if f["h3_pass"]
+            else f"stayed within half to double the setting on {mk} of {mn} checks")
+    note = (" so most of this comes from comparing each place with similar land, not from the learning."
+            if bn and bk >= mk - 2 else ".")
+    lines.append(f"- **The false-alarm setting is a tested target, not a guarantee.** On dates the method had not "
+                 f"seen at this site, the share of land our model flagged {held}. A simpler method that compares "
+                 f"each place with the average for its land type stayed in range on {bk} of {bn} checks,{note}"
+                 if bn else
+                 f"- **The false-alarm setting is a tested target, not a guarantee.** On dates the method had not "
+                 f"seen at this site, the share of land our model flagged {held}.")
+    lines.append("- The Limits tab has the full list.")
     with st.expander("Keep in mind"):
-        st.markdown(
-            "- **One fire is one case study.** Results may differ at other places and for other kinds of change.\n"
-            "- **This burn was hard to see with radar.** At the default setting our model flags about 38% of the "
-            "cells inside the fire perimeter, and most red cells on the map lie outside it. Some of those may be "
-            "real changes of another kind; none were checked on the ground. The Evidence tab has the numbers.\n"
-            "- **A flag means \"changed more than expected\", not \"burned\".**\n"
-            "- **The false-alarm setting is a tested target, not a guarantee.** On dates the method had not seen at "
-            "this site, the share of land flagged stayed within half to double the setting. A simpler method that "
-            "compares each place with the average for its land type did almost as well, so this comes mostly from "
-            "that comparison, not from the learning.\n"
-            "- The Limits tab has the full list.")
+        st.markdown("\n".join(lines))
 
 
 def view_map(site: str, D: dict, det: str, alpha: float) -> None:
@@ -213,7 +257,7 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         view_inspector(D, st.session_state.get("click"))
     view_places(site, det, alpha)
     how_to_read(det, alpha)
-    keep_in_mind()
+    keep_in_mind(D)
 
 
 @st.cache_data(show_spinner=False)
@@ -303,6 +347,9 @@ def view_validation(D: dict) -> None:
     h = met["hypotheses"]
     st.markdown("Two tests were written down, with all settings, before the fire dates were scored. "
                 "This page shows how they came out, and every number behind them.")
+    where = SITE_PREREG.get(D["meta"].get("site", ""))
+    if where:
+        st.caption(f"For this site the tests are in {where}.")
     if D.get("compare_png") is not None:
         st.markdown("#### Same false-alarm setting, two methods")
         st.image(str(D["compare_png"]), width="stretch")
@@ -392,12 +439,20 @@ def view_validation(D: dict) -> None:
                    "brightest (5, dense forest); they are clusters of radar brightness before the fire.")
 
 
-def view_limits() -> None:
+def view_limits(D: dict) -> None:
+    n = len(real_sites())
+    f = site_facts(D)
+    first = ("- This is one fire at one site, seen from one satellite track.\n" if n == 1 else
+             f"- These are {NUM_WORDS.get(n, n)} fires, each seen from one satellite track: a small sample.\n")
+    third = ("- On this fire every method, including ours, flags under half of the cells inside the perimeter.\n"
+             if f["all_under_half"] else
+             f"- At the default setting our model flags {pct(f['m']['inside_flagged'])} of the cells inside this "
+             "fire's perimeter.\n" if f["m"] else "")
     st.markdown(
         "#### In short\n"
-        "- This is one fire at one site, seen from one satellite track.\n"
+        + first +
         "- The method finds changes; it does not confirm what caused them.\n"
-        "- On this fire every method, including ours, flags well under half of the cells inside the perimeter.\n"
+        + third +
         "- The reference outline has its own errors: unburned patches inside it, real changes outside it.\n"
         "- The app shows stored results. It does not analyse new places or dates.\n\n"
         "The full technical list follows.\n\n---")
@@ -414,6 +469,7 @@ def main() -> None:
     with st.sidebar:
         st.markdown("## Cold Start")
         st.caption("Finding surface change with NISAR, a radar too new to have a history.")
+        avail = sorted(avail, key=lambda x: (x == "synthetic", x != "mccully", x))
         default = avail.index("mccully") if "mccully" in avail else 0
         site = st.selectbox("Study site", avail, index=default, format_func=lambda s: SITE_NAMES.get(s, s),
                             help="Results are precomputed for the sites listed here. The app does not analyse "
@@ -444,10 +500,11 @@ def main() -> None:
                    "4 cells are then removed, so the map usually shows fewer false alarms than the setting.")
     st.title("Cold Start")
     st.markdown("Finding surface change with NISAR, a radar too new to have a history. "
-                f"**Study site: {SITE_NAMES.get(site, site)}**")
+                f"**Study site: {SITE_NAMES.get(site, site)}**"
+                + (f", {SITE_ROLE[site]}" if site in SITE_ROLE else ""))
     st.markdown("Red cells on the map are places that changed more than the rest of the scene predicts, between a "
-                "radar image taken before the event and one taken after. These are **precomputed results for one "
-                "study site**; the app does not analyse other places or new dates.")
+                "radar image taken before the event and one taken after. These are **precomputed results for "
+                f"{NUM_WORDS.get(len(real_sites()), len(real_sites()))} study site{'s' if len(real_sites()) != 1 else ''}**; the app does not analyse other places or new dates.")
     with st.expander("What is this, and how does it work?"):
         st.markdown("NISAR is a NASA-ISRO radar satellite whose calibrated images begin on 17 June 2026. Many methods "
                     "for spotting change in radar images compare each place with years of its own past, which NISAR "
@@ -457,8 +514,12 @@ def main() -> None:
         st.markdown("**Intended use.** A triage aid for an analyst after an event: the map shows where the radar "
                     "changed more than similar land did, to help decide where to look first. Each flag still needs "
                     "checking against other imagery or on the ground; nobody uses this operationally yet.")
-        st.markdown("The app shows stored results for the 2026 McCully Fire in Oregon, plus a simulated test scene. "
-                    "Running the method elsewhere means running the open-source pipeline in the repository.")
+        st.markdown("The app shows stored results for "
+                    + " and ".join(SITE_NAMES.get(x, x).split(":")[0] for x in real_sites())
+                    + ", plus a simulated test scene."
+                    + (" The Austin Fire is a replication: its tests were written down and pushed to GitHub before "
+                       "any of its radar data were processed." if "austin" in real_sites() else "")
+                    + " Running the method elsewhere means running the open-source pipeline in the repository.")
         st.markdown("**For specialists.** A gradient-boosted quantile regression, cross-fitted over 10 km tiles, "
                     "predicts each 100 m cell's change in L-band HH and HV backscatter from its state on the earlier "
                     "date, using all pixels in the scene on the same two dates. Cells are scored by their residual "
@@ -471,7 +532,7 @@ def main() -> None:
     with t2:
         view_validation(D)
     with t3:
-        view_limits()
+        view_limits(D)
 
 
 main()
