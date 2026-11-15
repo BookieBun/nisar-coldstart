@@ -11,7 +11,7 @@ then Austin as a pre-registered replication.
 
 **Results.** On the McCully Fire both pre-registered hypotheses pass: set to flag half of the cells inside the fire perimeter, the model also flags 8.5% of the land more than 2 km outside it, against 12.8% for the best baseline. On the Austin Fire, a replication registered and pushed before its data were processed, the calibration result holds again (10 of 10 held-out checks within range) but the advantage does not: the model and the simpler land-type baseline tie (27.8% against 27.9%), while both clearly beat the standard log-ratio and short-history methods. The land-type baseline also calibrates almost as well (22 of 24 checks across both fires), so most of the calibration comes from comparing each place with similar land. This is a method for detecting radar-observed change at a controlled false-alarm rate, not a validated burn map.
 
-**Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully and Austin fires; no login needed)
+**Live app:** https://nisar-coldstart.streamlit.app (precomputed results for the McCully and Austin fires; no login needed). Below the map, *Places to check first* ranks the flagged places, marks those that lie on fires agencies have already mapped, and moves the map to any place you select, with its radar history. An exploratory check added after the results: those other mapped fires were flagged 10 and 24 times as often as ordinary land (land-type baseline 10 and 11 times; standard log-ratio 3 and 0.4 times); see [Other mapped fires](#other-mapped-fires-an-exploratory-cross-check). If the app has gone to sleep, the wake-up button brings it back in about a minute.
 
 ## Reproduce
 

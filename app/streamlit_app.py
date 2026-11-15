@@ -328,10 +328,10 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         fire = [[n - (rr.max() + 1) / h * (n - s), w + cc.min() / wd * (e - w)],
                 [n - rr.min() / h * (n - s), w + (cc.max() + 1) / wd * (e - w)]]
         m.fit_bounds(fire, padding_top_left=(20, 20), padding_bottom_right=(20, 420))
-    st.markdown("**Red** = flagged as changed. **Cyan outline** = the mapped edge of the fire. "
-                + ("**Yellow outline** = other fires mapped by agencies in 2026. " if other is not None else "")
-                + "**Grey** = the radar image. A red cell is a detected change, not confirmed fire damage; the full "
-                "guide is below the map.")
+    st.markdown("**Red** = changed more than the scene predicts. **Cyan** = mapped fire edge. "
+                + ("**Yellow** = other fires mapped in 2026. " if other is not None else "")
+                + "**Grey** = radar image. Red is a detected change, not confirmed damage. Below the map: places to "
+                "check and the full guide.")
     if focus:
         note, back = st.columns([4, 1])
         note.info(f"Showing place {focus['rank']} from the list below (cyan circle). Its radar history is on the "
@@ -524,6 +524,40 @@ def test_reasons(D: dict) -> dict:
                      f"calibration, at the {_join([odds(a) for a in alphas])} settings."
                      + (f" The other methods: {', '.join(others)}." if others else ""))
     return out
+
+
+def headline() -> str | None:
+    """One-line result across the real fires, built from the stored metrics, for the first screen."""
+    rs = real_sites()
+    if len(rs) < 2:
+        return None
+    k = n = 0
+    beat_std = True
+    lt: dict[str, list[str]] = {"beat": [], "tied": [], "lost": []}
+    for x in rs:
+        met, cal = load(x)["metrics"], load(x)["calib"]
+        mk, mn = h3_count(cal, "M")
+        k, n = k + mk, n + mn
+        diffs = met.get("differences", {})
+        d1 = diffs.get("M_minus_B1", {}).get("far_at_recall50")
+        beat_std = beat_std and bool(d1) and d1["ci95"][1] < 0
+        d3 = diffs.get("M_minus_B3", {}).get("far_at_recall50")
+        if d3:
+            lo, hi = d3["ci95"]
+            lt["beat" if hi < 0 else "lost" if lo > 0 else "tied"].append(SITE_NAMES.get(x, x).split(" Fire")[0])
+    both = "both" if len(rs) == 2 else "all"
+    model = []
+    if beat_std:
+        model.append(f"beat the standard method on {both}")
+    if lt["beat"]:
+        model.append(f"beat the land-type average on {_join(lt['beat'])}")
+    if lt["tied"]:
+        model.append(f"tied {'it' if lt['beat'] else 'the land-type average'} on {_join(lt['tied'])}")
+    if lt["lost"]:
+        model.append(f"lost to {'it' if lt['beat'] or lt['tied'] else 'the land-type average'} on {_join(lt['lost'])}")
+    return (f"**{NUM_WORDS.get(len(rs), str(len(rs))).capitalize()} fires, tests written down first:** the false-alarm "
+            f"setting held on {k} of {n} checks" + ("; our model " + _join(model) if model else "")
+            + " (Evidence tab). Results are precomputed; the app does not analyse other places or new dates.")
 
 
 def view_sites_summary() -> None:
@@ -763,9 +797,13 @@ def main() -> None:
     st.markdown("Finding surface change with NISAR, a radar too new to have a history. "
                 f"**Study site: {SITE_NAMES.get(site, site)}**"
                 + (f", {SITE_ROLE[site]}" if site in SITE_ROLE else ""))
-    st.markdown("Red cells on the map are places that changed more than the rest of the scene predicts, between a "
-                "radar image taken before the event and one taken after. These are **precomputed results for "
-                f"{NUM_WORDS.get(len(real_sites()), len(real_sites()))} study site{'s' if len(real_sites()) != 1 else ''}**; the app does not analyse other places or new dates.")
+    head = headline() if site in real_sites() else None
+    if head:
+        st.markdown(head)
+    else:
+        st.markdown("Red cells on the map are places that changed more than the rest of the scene predicts, between "
+                    "a radar image taken before the event and one taken after. These are **precomputed results for "
+                    f"{NUM_WORDS.get(len(real_sites()), len(real_sites()))} study site{'s' if len(real_sites()) != 1 else ''}**; the app does not analyse other places or new dates.")
     with st.expander("What is this, and how does it work?"):
         st.markdown("NISAR is a NASA-ISRO radar satellite whose calibrated images begin on 17 June 2026. Many methods "
                     "for spotting change in radar images compare each place with years of its own past, which NISAR "
