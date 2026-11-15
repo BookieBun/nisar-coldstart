@@ -127,6 +127,22 @@ cells are exchangeable. Rainfall (H2) was not tested. Full list:
   DAAC.
 - Fire perimeters: National Interagency Fire Center, WFIGS Interagency Fire Perimeters.
 
+## Third-party materials and their licences
+
+Everything outside NASA and partner-agency data is open source or openly published.
+
+| Material | Used for | Licence or terms |
+| --- | --- | --- |
+| NumPy, SciPy, pandas, scikit-learn, h5py, rasterio, shapely, asf_search | Pipeline | BSD |
+| pyproj, PyYAML, Folium, streamlit-folium, pytest | Pipeline, app, tests | MIT |
+| Streamlit, requests | App, perimeter download | Apache 2.0 |
+| Matplotlib | Figures | Matplotlib licence (PSF-based) |
+| NIFC WFIGS Interagency Fire Perimeters | Reference outline | Public U.S. interagency data; no licence stated, liability disclaimer applies |
+| OpenStreetMap map tiles | App background map | Open Database License, © OpenStreetMap contributors |
+| Esri World Imagery tiles | App background map (optional layer) | Esri terms of use; shown with Esri's attribution, not redistributed |
+
+Exact versions are in `requirements.lock`.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
