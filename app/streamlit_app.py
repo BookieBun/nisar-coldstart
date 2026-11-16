@@ -330,8 +330,7 @@ def view_map(site: str, D: dict, det: str, alpha: float) -> None:
         m.fit_bounds(fire, padding_top_left=(20, 20), padding_bottom_right=(20, 420))
     st.markdown("**Red** = changed more than the scene predicts. **Cyan** = mapped fire edge. "
                 + ("**Yellow** = other fires mapped in 2026. " if other is not None else "")
-                + "**Grey** = radar image. Red is a detected change, not confirmed damage. Below the map: places to "
-                "check and the full guide.")
+                + "**Grey** = radar image. Red is a detected change, not confirmed damage.")
     if focus:
         note, back = st.columns([4, 1])
         note.info(f"Showing place {focus['rank']} from the list below (cyan circle). Its radar history is on the "
@@ -546,18 +545,19 @@ def headline() -> str | None:
             lo, hi = d3["ci95"]
             lt["beat" if hi < 0 else "lost" if lo > 0 else "tied"].append(SITE_NAMES.get(x, x).split(" Fire")[0])
     both = "both" if len(rs) == 2 else "all"
-    model = []
-    if beat_std:
-        model.append(f"beat the standard method on {both}")
-    if lt["beat"]:
-        model.append(f"beat the land-type average on {_join(lt['beat'])}")
-    if lt["tied"]:
-        model.append(f"tied {'it' if lt['beat'] else 'the land-type average'} on {_join(lt['tied'])}")
-    if lt["lost"]:
-        model.append(f"lost to {'it' if lt['beat'] or lt['tied'] else 'the land-type average'} on {_join(lt['lost'])}")
-    return (f"**{NUM_WORDS.get(len(rs), str(len(rs))).capitalize()} fires, tests written down first:** the false-alarm "
-            f"setting held on {k} of {n} checks" + ("; our model " + _join(model) if model else "")
-            + " (Evidence tab). Results are precomputed; the app does not analyse other places or new dates.")
+    out = (f"**{NUM_WORDS.get(len(rs), str(len(rs))).capitalize()} fires, tests written down first.** The false-alarm "
+           f"setting held on {k} of {n} checks")
+    out += (f", and our model beat the standard before/after method on {both}." if beat_std else ".")
+    rest = lt["tied"] + lt["lost"]
+    if lt["beat"] and not rest:
+        out += f" It also beat the simpler land-type average on {both}."
+    elif lt["beat"]:
+        out += (f" Its edge over the simpler land-type average did not replicate on {_join(rest)}"
+                + (" (a tie)." if not lt["lost"] else "."))
+    elif rest:
+        out += " It did not beat the simpler land-type average."
+    return (out + " Places to check are listed below the map. Results are precomputed; the app does not analyse "
+            "other places or new dates.")
 
 
 def view_sites_summary() -> None:
